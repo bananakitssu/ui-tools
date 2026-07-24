@@ -10,3 +10,6 @@ Kind of like MUI.
   - If the UI renders and isn't responsive or the code doesnt run, go into **"node_modules/@bananacool467/ui-tools/dist/index.js"** and comment out `export { useTerminal } from "./useTerminal";` and `export type { UseTerminalOptions } from "./useTerminal";`
 > [!IMPORTANT]
 > The Notes above ***may*** be fixed soon
+
+> [!NOTE]
+> Documentation coming soon. Instead of reading a documentation, you can read the component files in `src/` instead
