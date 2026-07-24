@@ -1,11 +1,13 @@
 import React from 'react';
 import { useTheme } from './theme';
 
-export interface ContainerProps extends React.HTMLAttributes<HTMLDivElement> maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | false;
+export interface ContainerProps extends React.HTMLAttributes<HTMLDivElement> {
+  
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | false;
   
   fullHeight?: boolean;
   children?: React.ReactNode;
-
+}
 
 const widths: Record<string, string> = {
   sm: '480px',

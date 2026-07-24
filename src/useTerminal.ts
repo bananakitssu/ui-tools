@@ -1,13 +1,26 @@
-import { WebSocketServer } from 'ws';
-import * as pty from '@lydell/node-pty';
-import os from 'os';
-import crypto from 'crypto';
-import { IncomingMessage, ServerResponse } from 'http';
+
+const isNode = typeof process !== 'undefined' && process.versions != null && process.versions.node != null;
+let WebSocketServer: any = null
+let pty: any = null
+let os: any = null
+let crypto: any = null
+let IncomingMessage: any = null
+let ServerResponse: any = null
+
+if (isNode) {
+  
+  WebSocketServer = (await import("ws")).WebSocketServer;
+  pty = await import("@lydell/node-pty");
+  os = await import("os");
+  crypto = await import("crypto");
+  IncomingMessage = (await import("http")).IncomingMessage;
+  ServerResponse = (await import("http")).ServerResponse;
+}
 
 const MAX_HISTORY_LIMIT = 150 * 1024;
 
 interface TerminalSession {
-  ptyProcess: pty.IPty;
+  ptyProcess: any;
   ws: import('ws').WebSocket | null;
   cleanupTimeout: ReturnType<typeof setTimeout> | null;
   history: string;
@@ -21,6 +34,10 @@ export interface UseTerminalOptions {
 }
 
 export function useTerminal(options: UseTerminalOptions = {}) {
+  if (!isNode) {
+    console.warn("Must be running in Node.js environment for useTerminal");
+    return
+  }
   const {
     path = '/terminal-stream',
     shell = process.platform === 'win32' ? 'powershell.exe' : 'bash',
@@ -31,10 +48,10 @@ export function useTerminal(options: UseTerminalOptions = {}) {
   const wss = new WebSocketServer({ noServer: true });
   const sessions = new Map<string, TerminalSession>();
 
-  wss.on('connection', (ws) => {
+  wss.on('connection', (ws: any) => {
     let clientSessionId: string | null = null;
 
-    ws.on('message', (message) => {
+    ws.on('message', (message: any) => {
       try {
         const parsed = JSON.parse(message.toString());
 
@@ -90,7 +107,7 @@ export function useTerminal(options: UseTerminalOptions = {}) {
             };
             sessions.set(newSessionId, sessionState);
 
-            ptyProcess.onData((data) => {
+            ptyProcess.onData((data: any) => {
               const current = sessions.get(newSessionId);
               if (current) {
                 current.history += data;
@@ -142,16 +159,16 @@ export function useTerminal(options: UseTerminalOptions = {}) {
       }
     });
 
-    ws.on('error', (err) => {
+    ws.on('error', (err: any) => {
       console.error('Terminal WebSocket error:', err);
     });
   });
 
-  return (req: IncomingMessage, res: ServerResponse, next: () => void) => {
+  return (req: import("http").IncomingMessage, res: import("http").ServerResponse, next: () => void) => {
     if (req.url === path && req.headers.upgrade?.toLowerCase() === 'websocket') {
       req.socket.setTimeout(0);
       req.socket.setNoDelay(true);
-      wss.handleUpgrade(req, req.socket, Buffer.alloc(0), (ws) => {
+      wss.handleUpgrade(req, req.socket, Buffer.alloc(0), (ws: any) => {
         wss.emit('connection', ws, req);
       });
     } else {

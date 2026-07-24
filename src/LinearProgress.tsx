@@ -1,11 +1,13 @@
 import React from 'react';
 import { useTheme } from './theme';
 
-export interface LinearProgressProps value?: number;
+export interface LinearProgressProps {
+  
+  value?: number;
   color?: string;
   trackColor?: string;
   style?: React.CSSProperties;
-
+}
 
 export const LinearProgress: React.FC<LinearProgressProps> = ({ value, color, trackColor, style }) => {
   const theme = useTheme();

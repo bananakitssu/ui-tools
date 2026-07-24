@@ -469,7 +469,7 @@ export default function Terminal() {
     const connect = () => {
       setConnectionState("reconnecting");
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const ws = new WebSocket(`${protocol}
+      const ws = new WebSocket(`${protocol}//${window.location.host}/terminal-stream`);
       wsRef.current = ws;
 
       ws.onopen = () => {

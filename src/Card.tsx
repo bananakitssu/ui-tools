@@ -2,11 +2,13 @@ import React from 'react';
 import { Paper, type PaperElevation } from './Paper';
 import { Typography } from './Typography';
 
-export interface CardProps extends React.HTMLAttributes<HTMLDivElement> title?: string;
+export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  
+  title?: string;
   elevation?: 'flat' | 'card' | 'modal';
   variant?: 'elevation' | 'outlined';
   children?: React.ReactNode;
-
+}
 
 const elevationMap: Record<'flat' | 'card' | 'modal', PaperElevation> = {
   flat: 0,
