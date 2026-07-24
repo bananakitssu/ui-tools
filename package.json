@@ -1,0 +1,34 @@
+{
+  "dependencies": {
+    "@lydell/node-pty": "^1.2.0-beta.12",
+    "@types/ws": "^8.18.1",
+    "child_process": "^1.0.2",
+    "os": "^0.1.2",
+    "ws": "^8.21.0"
+  },
+  "devDependencies": {
+    "@bananacool467/authtics-host": "^0.1.7",
+    "@types/node": "^26.1.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "decomment": "^0.9.5",
+    "typescript": "^7.0.2"
+  },
+  "name": "@bananacool467/ui-tools",
+  "version": "0.1.2-beta",
+  "description": "UI Elements",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
+  "keywords": [
+    "ui"
+  ],
+  "author": "bananacool467",
+  "license": "MIT"
+}

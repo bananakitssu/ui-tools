@@ -1,0 +1,36 @@
+# Replit internals
+.cache/
+.local/
+.agents/
+.config/
+.authtics_host/
+.bashrc
+.replit
+replit.nix
+.npmrc
+attached_assets/
+*.ump
+.upm/
+
+# Dev/build deps
+node_modules/
+
+# Compiled files
+dist/
+
+# Project-specific non-library files
+Swiq/
+swiq
+server.ts
+index.html
+index.tsx
+authtics_host.config.ts
+App.tsx
+uh.js
+uh.zip
+tsconfig.json
+package-lock.json
+terminal (copy).tsx
+SKILL.md
+.npmignore
+strip.js
