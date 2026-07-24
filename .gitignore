@@ -35,5 +35,6 @@ SKILL.md
 .npmignore
 strip.js
 publishing.sh
+puller.sh
 msg.sh
 src/
