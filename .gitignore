@@ -21,18 +21,19 @@ dist/
 # Project-specific non-library files
 Swiq/
 swiq
-server.ts
+**/server.ts
 index.html
-index.tsx
-authtics_host.config.ts
-App.tsx
+**/index.tsx
+**/authtics_host.config.ts
+**/App.tsx
 uh.js
 uh.zip
 tsconfig.json
 package-lock.json
-terminal (copy).tsx
+**/terminal (copy).tsx
 SKILL.md
 .npmignore
 strip.js
 publishing.sh
 msg.sh
+src/
