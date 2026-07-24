@@ -15,19 +15,26 @@
     "typescript": "^7.0.2"
   },
   "name": "@bananacool467/ui-tools",
-  "version": "0.1.2-beta",
+  "version": "0.1.4-beta",
   "description": "UI Elements",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
     "access": "public"
   },
   "keywords": [
-    "ui"
+    "ui",
+    "tool",
+    "react",
+    "typescript",
+    "tsx",
+    "jsx",
+    "ui-tools",
+    "ui-components",
+    "ui-elements"
   ],
   "author": "bananacool467",
   "license": "MIT"
