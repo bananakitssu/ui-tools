@@ -34,3 +34,5 @@ terminal (copy).tsx
 SKILL.md
 .npmignore
 strip.js
+publishing.sh
+msg.sh
