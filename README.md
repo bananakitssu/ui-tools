@@ -7,8 +7,10 @@
   <img alt="downloads" src="https://img.shields.io/npm/dm/@bananacool467/ui-tools?style=for-the-badge" />
 </p>
 
-<a href="https://npmjs.org/package/@bananacool467/ui-tools"><img alt="NPM" src="https://img.shields.io/badge/NPM-@bananacool467%2Fui--tools-red?style=for-the-badge&logo=npm" /></a>
-<a href="https://github.com/bananakitssu/ui-tools"><img alt="GitHub" src="https://img.shields.io/badge/GitHub-bananakitssu%2Fui--tools-white?style=for-the-badge&logo=github" /></a>
+<p align="center">
+  <a href="https://npmjs.org/package/@bananacool467/ui-tools"><img alt="NPM" src="https://img.shields.io/badge/NPM-@bananacool467%2Fui--tools-red?style=for-the-badge&logo=npm" /></a>
+  <a href="https://github.com/bananakitssu/ui-tools"><img alt="GitHub" src="https://img.shields.io/badge/GitHub-bananakitssu%2Fui--tools-grey?style=for-the-badge&logo=github" /></a>
+</p>
 
 
 Just some UI tools.
