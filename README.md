@@ -45,4 +45,4 @@ npm run build
 ```
 
 > [!NOTE]
-> Documentation coming soon. Instead of reading a documentation, you can read the component files in `src/` instead
+> Documentation coming soon. Instead of reading a documentation, you can read the component files in `src/` in GitHub, or `dist/` in NPM.
