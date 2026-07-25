@@ -5,17 +5,13 @@ export type PaperElevation = 0 | 1 | 2 | 3 | 4;
 
 export interface PaperProps extends React.HTMLAttributes<HTMLElement> {
   as?: React.ElementType;
-  
   elevation?: PaperElevation;
-  
   variant?: 'elevation' | 'outlined';
-  
   square?: boolean;
   children?: React.ReactNode;
 }
 
 const elevationShadowKey = ['sm', 'sm', 'card', 'dropdown', 'modal'] as const;
-
 
 export const Paper: React.FC<PaperProps> = ({
   as: Tag = 'div',

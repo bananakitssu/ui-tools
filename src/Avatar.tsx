@@ -4,10 +4,8 @@ import { useTheme } from './theme';
 export interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
   src?: string;
   alt?: string;
-  
   children?: React.ReactNode;
   size?: number | 'small' | 'medium' | 'large';
-  
   color?: string;
   variant?: 'circular' | 'rounded' | 'square';
 }
@@ -31,8 +29,6 @@ export const Avatar: React.FC<AvatarProps> = ({
 
   const borderRadius = variant === 'circular' ? '50%' : variant === 'rounded' ? theme.radii.md : 0;
 
-  
-  
   const fallbackColors = [theme.colors.primary, theme.colors.accent, theme.colors.success, theme.colors.error];
   const initials = typeof children === 'string' ? children : '';
   const colorIndex = initials ? initials.charCodeAt(0) % fallbackColors.length : 0;

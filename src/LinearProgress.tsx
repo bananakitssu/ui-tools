@@ -2,7 +2,6 @@ import React from 'react';
 import { useTheme } from './theme';
 
 export interface LinearProgressProps {
-  
   value?: number;
   color?: string;
   trackColor?: string;

@@ -2,15 +2,10 @@ import React from 'react';
 import { useTheme } from './theme';
 
 export interface CircularProgressProps {
-  
   value?: number;
-  
   size?: number;
-  
   strokeWidth?: number;
-  
   color?: string;
-  
   trackColor?: string;
   style?: React.CSSProperties;
 }
@@ -28,12 +23,10 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
   const resolvedTrackColor = trackColor || theme.colors.primaryLight;
   const isIndeterminate = value === undefined;
 
-  
   const center = size / 2;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
 
-  
   const clampedValue = Math.min(100, Math.max(0, value ?? 0));
   const strokeDashoffset = circumference - (clampedValue / 100) * circumference;
 
@@ -54,12 +47,10 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
         height={size}
         viewBox={`0 0 ${size} ${size}`}
         style={{
-          
           transform: isIndeterminate ? 'none' : 'rotate(-90deg)',
           animation: isIndeterminate ? 'spin 1.2s linear infinite' : 'none',
         }}
       >
-        
         <style>{`
           @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -67,7 +58,6 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
           }
         `}</style>
 
-        
         <circle
           cx={center}
           cy={center}
@@ -77,7 +67,6 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
           strokeWidth={strokeWidth}
         />
 
-        
         <circle
           cx={center}
           cy={center}

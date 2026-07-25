@@ -14,7 +14,6 @@ export interface BottomNavigationProps {
   style?: React.CSSProperties;
 }
 
-
 export const BottomNavigation: React.FC<BottomNavigationProps> = ({ items, value, onChange, style }) => {
   const theme = useTheme();
 

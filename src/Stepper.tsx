@@ -8,7 +8,6 @@ export interface Step {
 
 export interface StepperProps {
   steps: Step[];
-  
   activeStep: number;
   orientation?: 'horizontal' | 'vertical';
   style?: React.CSSProperties;

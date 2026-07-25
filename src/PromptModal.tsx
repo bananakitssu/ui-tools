@@ -7,20 +7,16 @@ import { Typography } from './Typography';
 export interface PromptModalProps {
   isOpen: boolean;
   onClose: () => void;
-  
   onConfirm: (value: string) => void;
   title?: string;
-  
   message?: string;
   label?: string;
   placeholder?: string;
   defaultValue?: string;
   confirmText?: string;
   cancelText?: string;
-  
   destructive?: boolean;
 }
-
 
 export const PromptModal: React.FC<PromptModalProps> = ({
   isOpen,
@@ -37,7 +33,6 @@ export const PromptModal: React.FC<PromptModalProps> = ({
 }) => {
   const [value, setValue] = useState(defaultValue);
 
-  
   useEffect(() => {
     if (isOpen) setValue(defaultValue);
   }, [isOpen, defaultValue]);

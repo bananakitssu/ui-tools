@@ -5,9 +5,7 @@ import { useRipple } from './useRipple';
 export interface FabProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'small' | 'medium' | 'large';
   color?: 'primary' | 'default';
-  
   variant?: 'circular' | 'extended';
-  
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'none';
   children?: React.ReactNode;
 }

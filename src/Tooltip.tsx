@@ -7,7 +7,6 @@ export interface TooltipProps {
   placement?: 'top' | 'bottom' | 'left' | 'right';
 }
 
-
 export const Tooltip: React.FC<TooltipProps> = ({ label, children, placement = 'top' }) => {
   const theme = useTheme();
   const [visible, setVisible] = useState(false);

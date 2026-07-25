@@ -15,7 +15,6 @@ export interface AutocompleteProps {
   style?: React.CSSProperties;
 }
 
-
 export const Autocomplete: React.FC<AutocompleteProps> = ({ label, options, value, onChange, placeholder = 'Search...', style }) => {
   const theme = useTheme();
   const [inputValue, setInputValue] = useState('');

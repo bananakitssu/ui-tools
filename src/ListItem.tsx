@@ -4,7 +4,6 @@ import { useRipple } from './useRipple';
 
 export interface ListItemProps extends React.LiHTMLAttributes<HTMLLIElement> {
   children?: React.ReactNode;
-  
   button?: boolean;
   onClick?: () => void;
   selected?: boolean;

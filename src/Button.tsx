@@ -50,8 +50,6 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({
   };
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    
-    
     if (e.detail === 0 && !isActuallyDisabled) {
       const rect = e.currentTarget.getBoundingClientRect();
       const size = Math.max(rect.width, rect.height) * 1.3;

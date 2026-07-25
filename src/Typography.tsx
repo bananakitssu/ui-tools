@@ -8,13 +8,11 @@ export type TypographyVariant =
 
 export interface TypographyProps extends React.HTMLAttributes<HTMLElement> {
   variant?: TypographyVariant;
-  
   as?: React.ElementType;
   color?: string;
   align?: 'left' | 'center' | 'right';
   children?: React.ReactNode;
 }
-
 
 const variantConfig: Record<
   TypographyVariant,
@@ -29,7 +27,6 @@ const variantConfig: Record<
   caption: { tag: 'span', font: 'body', size: 'xs', weight: 400, lineHeight: 1.4, defaultColor: 'textMuted' },
   overline: { tag: 'span', font: 'display', size: 'xs', weight: 700, lineHeight: 1.4, letterSpacing: '0.08em', textTransform: 'uppercase', defaultColor: 'ink' },
 };
-
 
 export const Typography: React.FC<TypographyProps> = ({
   variant = 'body1',

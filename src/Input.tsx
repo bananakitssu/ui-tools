@@ -30,9 +30,6 @@ export const Input: React.FC<InputProps> = ({
   const uid = useId().replace(/[:]/g, '');
 
   const currentValue = value !== undefined ? value : internalValue;
-  
-  
-  
   const isFloated = isFocused || Boolean(currentValue) || Boolean(placeholder);
 
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {

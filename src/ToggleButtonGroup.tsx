@@ -11,7 +11,6 @@ export interface ToggleButtonGroupProps {
   options: ToggleOption[];
   value: string | string[];
   onChange: (value: string | string[]) => void;
-  
   multiple?: boolean;
   style?: React.CSSProperties;
 }

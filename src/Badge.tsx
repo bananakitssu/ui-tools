@@ -4,14 +4,12 @@ import { useTheme } from './theme';
 export interface BadgeProps {
   content?: React.ReactNode;
   color?: string;
-  
   variant?: 'standard' | 'dot';
   max?: number;
   invisible?: boolean;
   children?: React.ReactNode;
   style?: React.CSSProperties;
 }
-
 
 export const Badge: React.FC<BadgeProps> = ({ content, color, variant = 'standard', max = 99, invisible = false, children, style }) => {
   const theme = useTheme();

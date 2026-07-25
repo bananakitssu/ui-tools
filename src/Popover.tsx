@@ -5,14 +5,12 @@ import { useTheme } from './theme';
 export interface PopoverProps {
   isOpen: boolean;
   onClose: () => void;
-  
   anchorRef: React.RefObject<HTMLElement>;
   children: React.ReactNode;
   style?: React.CSSProperties;
 }
 
 const ENTER_DURATION = 150;
-
 
 export const Popover: React.FC<PopoverProps> = ({ isOpen, onClose, anchorRef, children, style }) => {
   const theme = useTheme();

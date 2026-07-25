@@ -13,7 +13,6 @@ export interface DrawerProps {
 const ENTER_DURATION = 225;
 const EXIT_DURATION = 195;
 
-
 export const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, anchor = 'left', children, style }) => {
   const theme = useTheme();
   const [isMounted, setIsMounted] = useState(false);
@@ -45,9 +44,6 @@ export const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, anchor = 'left'
     }
   }, [isOpen]);
 
-  
-  
-  
   useEffect(() => {
     if (!shouldRender || !isMounted) return;
     const originalOverflow = document.body.style.overflow;

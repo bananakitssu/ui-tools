@@ -8,7 +8,6 @@ export interface SkeletonProps {
   style?: React.CSSProperties;
 }
 
-
 export const Skeleton: React.FC<SkeletonProps> = ({ variant = 'text', width, height, style }) => {
   const theme = useTheme();
   const defaultHeight = variant === 'text' ? '1em' : variant === 'circular' ? '40px' : '80px';

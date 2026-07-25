@@ -9,7 +9,6 @@ export interface SliderProps {
   step?: number;
   disabled?: boolean;
   onChange?: (value: number) => void;
-  
   showValue?: boolean;
   style?: React.CSSProperties;
 }

@@ -4,7 +4,6 @@ import { useTheme } from './theme';
 export interface AccordionProps {
   title: React.ReactNode;
   children?: React.ReactNode;
-  
   expanded?: boolean;
   onChange?: (expanded: boolean) => void;
   defaultExpanded?: boolean;

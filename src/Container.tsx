@@ -2,9 +2,7 @@ import React from 'react';
 import { useTheme } from './theme';
 
 export interface ContainerProps extends React.HTMLAttributes<HTMLDivElement> {
-  
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | false;
-  
   fullHeight?: boolean;
   children?: React.ReactNode;
 }
@@ -15,7 +13,6 @@ const widths: Record<string, string> = {
   lg: '860px',
   xl: '1120px',
 };
-
 
 export const Container: React.FC<ContainerProps> = ({
   maxWidth = 'md',

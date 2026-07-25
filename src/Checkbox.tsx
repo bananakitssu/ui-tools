@@ -27,7 +27,6 @@ export const Checkbox: React.FC<CheckboxProps> = ({
   const handlePointerDown = () => startRipple(0, 0, HIT_SIZE);
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    
     if (e.detail === 0 && !disabled) {
       startRipple(0, 0, HIT_SIZE);
       window.setTimeout(endRipple, 120);

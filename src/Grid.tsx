@@ -1,17 +1,12 @@
 import React from 'react';
 
 export interface GridProps extends React.HTMLAttributes<HTMLDivElement> {
-  
   container?: boolean;
-  
   span?: number;
-  
   columns?: number;
-  
   spacing?: number | string;
   children?: React.ReactNode;
 }
-
 
 export const Grid: React.FC<GridProps> = ({
   container = false,

@@ -8,7 +8,6 @@ export interface Toast {
   message: string;
   type: ToastType;
   duration?: number;
-  
   leaving?: boolean;
 }
 
@@ -27,8 +26,6 @@ export const useToast = () => {
   return context;
 };
 
-
-
 const ENTER_DURATION = 225;
 const EXIT_DURATION = 195;
 
@@ -39,14 +36,11 @@ interface ToastItemProps {
   onClose: () => void;
 }
 
-
-
 const ToastItem: React.FC<ToastItemProps> = ({ toast, colors, theme, onClose }) => {
   const [entered, setEntered] = useState(false);
 
   useEffect(() => {
     let raf2 = 0;
-    
     const raf1 = requestAnimationFrame(() => {
       raf2 = requestAnimationFrame(() => setEntered(true));
     });
@@ -115,17 +109,14 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [isMounted, setIsMounted] = useState(false);
 
-  
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  
   const purgeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
-  
   const removeToast = useCallback(
     (id: string) => {
       setToasts((prev) => prev.map((toast) => (toast.id === id ? { ...toast, leaving: true } : toast)));
@@ -152,7 +143,6 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     <ToastContext.Provider value={{ addToast, removeToast }}>
       {children}
 
-      
       {isMounted && (
         <div
           style={{

@@ -1,4 +1,3 @@
-
 const isNode = typeof process !== 'undefined' && process.versions != null && process.versions.node != null;
 let WebSocketServer: any = null
 let pty: any = null
@@ -8,7 +7,6 @@ let IncomingMessage: any = null
 let ServerResponse: any = null
 
 if (isNode) {
-  
   WebSocketServer = (await import("ws")).WebSocketServer;
   pty = await import("@lydell/node-pty");
   os = await import("os");
@@ -59,7 +57,6 @@ export function useTerminal(options: UseTerminalOptions = {}) {
           const { sessionId, cols, rows } = parsed.data;
 
           if (sessionId && sessions.has(sessionId)) {
-            
             clientSessionId = sessionId;
             const session = sessions.get(sessionId)!;
 
@@ -75,13 +72,10 @@ export function useTerminal(options: UseTerminalOptions = {}) {
             ws.send(JSON.stringify({ type: 'session', sessionId }));
             ws.send(JSON.stringify({ type: 'history', history: session.history }));
 
-            
           } else {
-            
             const newSessionId = crypto.randomUUID();
             clientSessionId = newSessionId;
 
-            
 
             const ptyProcess = pty.spawn(shell, shellArgs, {
               name: 'xterm-256color',
@@ -149,10 +143,8 @@ export function useTerminal(options: UseTerminalOptions = {}) {
         const session = sessions.get(clientSessionId)!;
         session.ws = null;
 
-        
 
         session.cleanupTimeout = setTimeout(() => {
-          
           try { session.ptyProcess.kill(); } catch (_) {}
           sessions.delete(clientSessionId!);
         }, 10 * 60 * 1000);

@@ -3,7 +3,6 @@ import { useTheme } from './theme';
 
 export interface DividerProps extends React.HTMLAttributes<HTMLDivElement> {
   orientation?: 'horizontal' | 'vertical';
-  
   children?: React.ReactNode;
 }
 

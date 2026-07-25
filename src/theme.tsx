@@ -1,9 +1,5 @@
 import React, { createContext, useContext, useMemo } from 'react';
 
-
-
-
-
 export const defaultTheme = {
   colors: {
     primary: '#4F46E5',
@@ -52,8 +48,6 @@ export const defaultTheme = {
     pill: '999px',
   },
 
-  
-  
   shadow: {
     sm: '0px 2px 1px -1px rgba(0,0,0,0.08), 0px 1px 1px 0px rgba(0,0,0,0.06), 0px 1px 3px 0px rgba(0,0,0,0.05)',
     card: '0px 1px 1px -1px rgba(0,0,0,0.06), 0px 1px 1px 0px rgba(0,0,0,0.05), 0px 1px 3px 0px rgba(0,0,0,0.06)',
@@ -108,11 +102,9 @@ export interface ThemeProviderProps {
   children: React.ReactNode;
 }
 
-
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ theme, children }) => {
   const merged = useMemo(() => deepMerge(defaultTheme, theme), [theme]);
   return <ThemeContext.Provider value={merged}>{children}</ThemeContext.Provider>;
 };
-
 
 export const useTheme = (): Theme => useContext(ThemeContext);

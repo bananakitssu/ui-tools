@@ -9,7 +9,6 @@ export interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextArea
   activeColor?: string;
 }
 
-
 export const TextArea: React.FC<TextAreaProps> = ({
   label,
   error = false,
@@ -32,8 +31,6 @@ export const TextArea: React.FC<TextAreaProps> = ({
   const uid = useId().replace(/[:]/g, '');
 
   const currentValue = value !== undefined ? value : internalValue;
-  
-  
   const isFloated = isFocused || Boolean(currentValue) || Boolean(placeholder);
 
   const handleFocus = (e: React.FocusEvent<HTMLTextAreaElement>) => {

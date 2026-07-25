@@ -2,13 +2,11 @@ import React from 'react';
 import { useTheme } from './theme';
 
 export interface AppBarProps extends React.HTMLAttributes<HTMLElement> {
-  
   position?: 'static' | 'sticky' | 'fixed';
   color?: 'primary' | 'surface';
   elevation?: boolean;
   children?: React.ReactNode;
 }
-
 
 export const AppBar: React.FC<AppBarProps> = ({
   position = 'static',
@@ -51,7 +49,6 @@ export interface AppBarTitleProps {
   children?: React.ReactNode;
   style?: React.CSSProperties;
 }
-
 
 export const AppBarTitle: React.FC<AppBarTitleProps> = ({ children, style }) => {
   const theme = useTheme();

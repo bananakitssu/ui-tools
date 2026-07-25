@@ -11,7 +11,6 @@ export interface AlertProps {
   style?: React.CSSProperties;
 }
 
-
 export const Alert: React.FC<AlertProps> = ({ severity = 'info', title, onClose, children, style }) => {
   const theme = useTheme();
 

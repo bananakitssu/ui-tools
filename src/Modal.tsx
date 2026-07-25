@@ -10,8 +10,6 @@ export interface ModalProps {
   style?: React.CSSProperties;
 }
 
-
-
 const ENTER_DURATION = 225;
 const EXIT_DURATION = 195;
 
@@ -31,20 +29,14 @@ export const Modal: React.FC<ModalProps> = ({
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
-  
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  
-  
-  
   useEffect(() => {
     if (isOpen) {
       setShouldRender(true);
       let raf2 = 0;
-      
-      
       const raf1 = requestAnimationFrame(() => {
         raf2 = requestAnimationFrame(() => setVisible(true));
       });
@@ -59,19 +51,14 @@ export const Modal: React.FC<ModalProps> = ({
     }
   }, [isOpen]);
 
-  
   useEffect(() => {
     if (!shouldRender || !isMounted) return;
 
-    
     previousActiveElement.current = document.activeElement as HTMLElement;
 
-    
-    
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
-    
     const focusableSelector =
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
@@ -82,7 +69,6 @@ export const Modal: React.FC<ModalProps> = ({
       );
     };
 
-    
     const focusables = getFocusableElements();
     if (focusables.length > 0) {
       focusables[0].focus();
@@ -90,7 +76,6 @@ export const Modal: React.FC<ModalProps> = ({
       modalRef.current?.focus();
     }
 
-    
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onCloseRef.current();
@@ -105,13 +90,11 @@ export const Modal: React.FC<ModalProps> = ({
         const lastElement = currentFocusables[currentFocusables.length - 1];
 
         if (e.shiftKey) {
-          
           if (document.activeElement === firstElement) {
             e.preventDefault();
             lastElement.focus();
           }
         } else {
-          
           if (document.activeElement === lastElement) {
             e.preventDefault();
             firstElement.focus();
@@ -122,22 +105,18 @@ export const Modal: React.FC<ModalProps> = ({
 
     document.addEventListener('keydown', handleKeyDown);
 
-    
     return () => {
       document.body.style.overflow = originalOverflow;
       document.removeEventListener('keydown', handleKeyDown);
 
-      
       if (previousActiveElement.current) {
         previousActiveElement.current.focus();
       }
     };
   }, [shouldRender, isMounted]);
 
-  
   if (!shouldRender || !isMounted) return null;
 
-  
   return createPortal(
     <div
       onClick={onClose}
@@ -157,7 +136,6 @@ export const Modal: React.FC<ModalProps> = ({
         padding: '16px',
       }}
     >
-      
       <div
         ref={modalRef}
         role="dialog"
@@ -185,8 +163,6 @@ export const Modal: React.FC<ModalProps> = ({
           ...style,
         }}
       >
-        
-        
         <div
           style={{
             padding: '18px 22px',
@@ -222,7 +198,6 @@ export const Modal: React.FC<ModalProps> = ({
           </button>
         </div>
 
-        
         <div style={{ padding: '22px', color: theme.colors.ink, fontSize: theme.typography.size.base, lineHeight: 1.5 }}>
           {children}
         </div>

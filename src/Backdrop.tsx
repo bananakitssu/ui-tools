@@ -11,7 +11,6 @@ export interface BackdropProps {
 const ENTER_DURATION = 225;
 const EXIT_DURATION = 195;
 
-
 export const Backdrop: React.FC<BackdropProps> = ({ open, children, onClick, style }) => {
   const [shouldRender, setShouldRender] = useState(open);
   const [visible, setVisible] = useState(false);

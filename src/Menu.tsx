@@ -12,12 +12,10 @@ export interface MenuItem {
 
 export interface MenuProps {
   items: MenuItem[];
-  
   children: React.ReactNode;
 }
 
 const ENTER_DURATION = 120;
-
 
 export const Menu: React.FC<MenuProps> = ({ items, children }) => {
   const theme = useTheme();

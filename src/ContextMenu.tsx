@@ -6,9 +6,7 @@ export interface ContextMenuItem {
   label: string;
   onClick?: () => void;
   disabled?: boolean;
-  
   danger?: boolean;
-  
   divider?: boolean;
 }
 
@@ -18,7 +16,6 @@ export interface ContextMenuProps {
 }
 
 const ENTER_DURATION = 120;
-
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({ items, children }) => {
   const theme = useTheme();
@@ -36,7 +33,6 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ items, children }) => 
     setPosition({ x: e.clientX, y: e.clientY });
   };
 
-  
   useEffect(() => {
     if (!position) return;
     setVisible(false);
@@ -64,7 +60,6 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ items, children }) => 
     };
   }, [position, close]);
 
-  
   const clampedX = position ? Math.min(position.x, window.innerWidth - 200) : 0;
   const clampedY = position ? Math.min(position.y, window.innerHeight - (items.length * 36 + 20)) : 0;
 

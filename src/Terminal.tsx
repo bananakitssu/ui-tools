@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 
-
 const ANSI_COLORS: Record<string, string> = {
   "30": "#000000", "31": "#cd0000", "32": "#00cd00", "33": "#cdcd00",
   "34": "#0000ee", "35": "#cd00cd", "36": "#00cdcd", "37": "#e5e5e5",
@@ -61,14 +60,12 @@ interface Cell {
   bg: string;
 }
 
-
 interface RepeatingButtonProps {
   style: React.CSSProperties;
   onAction: () => void;
   onFocus: () => void;
   children: React.ReactNode;
 }
-
 
 const RepeatingButton = ({ style, onAction, onFocus, children }: RepeatingButtonProps) => {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -83,7 +80,6 @@ const RepeatingButton = ({ style, onAction, onFocus, children }: RepeatingButton
 
     stopRepeat();
 
-    
     timeoutRef.current = setTimeout(() => {
       intervalRef.current = setInterval(() => {
         onAction();
@@ -126,7 +122,6 @@ export default function Terminal() {
   const inputRef = useRef<HTMLInputElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
-  
   const [inputValue, setInputValue] = useState(' ');
 
   const [connectionState, setConnectionState] = useState<"connected" | "reconnecting" | "failed">("reconnecting");
@@ -494,7 +489,6 @@ export default function Terminal() {
               localStorage.setItem("terminal_session_id", payload.sessionId);
               processed = true;
             } 
-            
             else if (payload.type === "history" || payload.type === "recovery") {
               clearGrid(true);
               const historyData = payload.history || payload.data || payload.logs || "";
@@ -560,7 +554,6 @@ export default function Terminal() {
     setShiftPressed(false);
   };
 
-  
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const text = e.target.value;
     if (text === '') {
@@ -771,7 +764,6 @@ export default function Terminal() {
       }
 
       if (Date.now() - lastBlinkTime > 500) {
-        
         lastBlinkTime = Date.now();
       }
 
@@ -832,7 +824,6 @@ export default function Terminal() {
   return (
     <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-start", gap: "8px" }}>
       
-      
       <div 
         ref={containerRef}
         onClick={forceFocus} 
@@ -862,14 +853,7 @@ export default function Terminal() {
             zIndex: 2,
             pointerEvents: "none"
           }}>
-            <span style={{
-              width: "8px",
-              height: "8px",
-              borderRadius: "50%",
-              background: "#ffff55",
-              animation: "pulse 1s infinite alternate"
-            }} />
-            RECONNECTING SESSION...
+            Reconnecting current terminal session...
           </div>
         )}
 
@@ -903,15 +887,13 @@ export default function Terminal() {
         />
       </div>
 
-      
-      <div style={{ 
+      {controls ? (<div style={{ 
         display: "grid", 
         gridTemplateColumns: "repeat(2, 1fr)", 
         gap: "4px", 
         width: "114px", 
         height: CONTAINER_HEIGHT 
       }}>
-        
         <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b", true)} onFocus={forceFocus}>
           ESC
         </RepeatingButton>
@@ -919,7 +901,6 @@ export default function Terminal() {
           PGUP
         </RepeatingButton>
 
-        
         <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\t", true)} onFocus={forceFocus}>
           TAB
         </RepeatingButton>
@@ -927,7 +908,6 @@ export default function Terminal() {
           PGDN
         </RepeatingButton>
 
-        
         <button style={buttonStyle(ctrlPressed)} onPointerDown={(e) => handleToggleClick(e, () => setCtrlPressed(!ctrlPressed))}>
           CTRL
         </button>
@@ -935,7 +915,6 @@ export default function Terminal() {
           -
         </RepeatingButton>
 
-        
         <button style={buttonStyle(altPressed)} onPointerDown={(e) => handleToggleClick(e, () => setAltPressed(!altPressed))}>
           ALT
         </button>
@@ -943,7 +922,6 @@ export default function Terminal() {
           \
         </RepeatingButton>
 
-        
         <button style={buttonStyle(shiftPressed)} onPointerDown={(e) => handleToggleClick(e, () => setShiftPressed(!shiftPressed))}>
           SHFT
         </button>
@@ -951,7 +929,6 @@ export default function Terminal() {
           ↑
         </RepeatingButton>
 
-        
         <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("/")} onFocus={forceFocus}>
           /
         </RepeatingButton>
@@ -959,7 +936,6 @@ export default function Terminal() {
           ←
         </RepeatingButton>
 
-        
         <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[H", true)} onFocus={forceFocus}>
           HOME
         </RepeatingButton>
@@ -967,21 +943,14 @@ export default function Terminal() {
           ↓
         </RepeatingButton>
 
-        
         <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[F", true)} onFocus={forceFocus}>
           END
         </RepeatingButton>
         <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[C", true)} onFocus={forceFocus}>
           →
         </RepeatingButton>
-      </div>
+      </div>) : null}
 
-      <style>{`
-        @keyframes pulse {
-          from { opacity: 0.3; transform: scale(0.9); }
-          to { opacity: 1; transform: scale(1.1); }
-        }
-      `}</style>
     </div>
   );
 }

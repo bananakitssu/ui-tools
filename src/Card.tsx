@@ -3,7 +3,6 @@ import { Paper, type PaperElevation } from './Paper';
 import { Typography } from './Typography';
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  
   title?: string;
   elevation?: 'flat' | 'card' | 'modal';
   variant?: 'elevation' | 'outlined';
@@ -15,7 +14,6 @@ const elevationMap: Record<'flat' | 'card' | 'modal', PaperElevation> = {
   card: 2,
   modal: 4,
 };
-
 
 export const Card: React.FC<CardProps> = ({
   title,
