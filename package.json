@@ -15,9 +15,11 @@
     "typescript": "^7.0.2"
   },
   "name": "@bananacool467/ui-tools",
-  "version": "0.1.4-beta",
+  "version": "0.1.5-beta",
   "description": "UI Elements",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "repository": "https://github.com/bananakitssu/ui-tools",
   "scripts": {
     "build": "tsc"
   },

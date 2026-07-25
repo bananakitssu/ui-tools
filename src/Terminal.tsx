@@ -116,7 +116,13 @@ const RepeatingButton = ({ style, onAction, onFocus, children }: RepeatingButton
   );
 };
 
-export default function Terminal() {
+export default function Terminal(
+  {
+    controls
+  } : {
+    controls?: boolean
+  }
+) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
