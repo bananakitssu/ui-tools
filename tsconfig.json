@@ -12,7 +12,8 @@
     "removeComments": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "types": ["node"]
+    "types": ["node"],
+    "rootDir": "./"
   },
   "include": ["*.tsx", "*.ts", "src/**/*.tsx", "src/**/*.ts"],
   "exclude": ["server.ts", "authtics_host.config.ts", "index.tsx", "App.tsx", "node_modules", "dist", "terminal (copy).tsx"]
