@@ -15,13 +15,14 @@
     "typescript": "^7.0.2"
   },
   "name": "@bananacool467/ui-tools",
-  "version": "0.1.6-beta",
+  "version": "0.1.7-beta",
   "description": "UI Elements",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "repository": "https://github.com/bananakitssu/ui-tools",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",

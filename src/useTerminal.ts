@@ -6,15 +6,6 @@ let crypto: any = null
 let IncomingMessage: any = null
 let ServerResponse: any = null
 
-if (isNode) {
-  WebSocketServer = (await import("ws")).WebSocketServer;
-  pty = await import("@lydell/node-pty");
-  os = await import("os");
-  crypto = await import("crypto");
-  IncomingMessage = (await import("http")).IncomingMessage;
-  ServerResponse = (await import("http")).ServerResponse;
-}
-
 const MAX_HISTORY_LIMIT = 150 * 1024;
 
 interface TerminalSession {
@@ -31,7 +22,15 @@ export interface UseTerminalOptions {
   maxHistory?: number;
 }
 
-export function useTerminal(options: UseTerminalOptions = {}) {
+export async function useTerminal(options: UseTerminalOptions = {}) {
+  if (isNode) {
+    WebSocketServer = (await import("ws")).WebSocketServer;
+    pty = await import("@lydell/node-pty");
+    os = await import("os");
+    crypto = await import("crypto");
+    IncomingMessage = (await import("http")).IncomingMessage;
+    ServerResponse = (await import("http")).ServerResponse;
+  }
   if (!isNode) {
     console.warn("Must be running in Node.js environment for useTerminal");
     return
