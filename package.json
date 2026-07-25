@@ -21,8 +21,9 @@
   "types": "dist/index.d.ts",
   "repository": "https://github.com/bananakitssu/ui-tools",
   "scripts": {
-    "build": "tsc",
-    "prepublishOnly": "npm run build"
+    "build": "tsc && [ -d dist/src ] && mv dist/src/* dist/ && rmdir dist/src || true",
+    "prepublishOnly": "npm run build",
+    "setup": "npm i @types/node @types/react @types/react-dom typescript"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
