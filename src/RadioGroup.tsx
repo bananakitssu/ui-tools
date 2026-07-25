@@ -40,7 +40,7 @@ export const RadioGroup: React.FC<RadioGroupProps> = ({
           if (React.isValidElement(child)) {
             return React.cloneElement(child, {
               name,
-              checked: child.props.value === value,
+              checked: (child as any).props.value === value,
               onChange: (e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value),
             } as any);
           }
