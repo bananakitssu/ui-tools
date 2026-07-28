@@ -24,12 +24,14 @@ export interface UseTerminalOptions {
 
 export async function useTerminal(options: UseTerminalOptions = {}) {
   if (isNode) {
-    WebSocketServer = (await import("ws")).WebSocketServer;
-    pty = await import("@lydell/node-pty");
-    os = await import("os");
-    crypto = await import("crypto");
-    IncomingMessage = (await import("http")).IncomingMessage;
-    ServerResponse = (await import("http")).ServerResponse;
+    try {
+      WebSocketServer = (await import("ws")).WebSocketServer;
+      pty = await import("@lydell/node-pty");
+      os = await import("os");
+      crypto = await import("crypto");
+      IncomingMessage = (await import("http")).IncomingMessage;
+      ServerResponse = (await import("http")).ServerResponse;
+    } catch (err) { }
   }
   if (!isNode) {
     console.warn("Must be running in Node.js environment for useTerminal");

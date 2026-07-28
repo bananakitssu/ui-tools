@@ -15,7 +15,7 @@
     "typescript": "^7.0.2"
   },
   "name": "@bananacool467/ui-tools",
-  "version": "0.1.7-beta",
+  "version": "0.1.8-beta",
   "description": "UI Elements",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
