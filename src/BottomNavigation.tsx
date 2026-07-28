@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTheme } from './theme';
+import { Button } from './Button';
 
 export interface BottomNavItem {
   label: string;
@@ -35,9 +36,10 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ items, value
       {items.map((item) => {
         const active = item.value === value;
         return (
-          <button
+          <Button
             key={item.value}
             onClick={() => onChange(item.value)}
+            variant="secondary"
             style={{
               flex: 1,
               display: 'flex',
@@ -46,6 +48,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ items, value
               gap: '2px',
               padding: '8px 4px 10px',
               background: 'transparent',
+              borderRadius: 0,
               border: 'none',
               cursor: 'pointer',
               color: active ? theme.colors.primary : theme.colors.textMuted,
@@ -57,7 +60,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ items, value
             <span style={{ fontSize: theme.typography.size.xs, fontWeight: active ? theme.typography.weight.semibold : theme.typography.weight.regular }}>
               {item.label}
             </span>
-          </button>
+          </Button>
         );
       })}
     </div>

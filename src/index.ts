@@ -35,7 +35,7 @@ export * from "./Tooltip";
 export * from "./Typography";
 export * from "./useRipple";
 export * from "./View";
-export { default as Terminal } from "./Terminal";
+export { Terminal } from "./Terminal";
 export { default as Video } from "./Video";
 export { useTerminal } from "./useTerminal";
 export type { UseTerminalOptions } from "./useTerminal";

@@ -54,3 +54,7 @@ export * from './Badge';
 export * from './Chip';
 export * from './Rating';
 export * from './ToggleButtonGroup';
+
+export * from './Terminal';
+export * from './CodeEditor';
+export * from './Video';

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTheme } from './theme';
+import { Button } from './Button';
 
 export interface ToggleOption {
   label: React.ReactNode;
@@ -46,17 +47,19 @@ export const ToggleButtonGroup: React.FC<ToggleButtonGroupProps> = ({ options, v
       {options.map((opt, i) => {
         const isSelected = selectedValues.includes(opt.value);
         return (
-          <button
+          <Button
             key={opt.value}
             disabled={opt.disabled}
             onClick={() => handleClick(opt.value, opt.disabled)}
+            variant={isSelected ? 'primary' : 'secondary'}
             style={{
               flexShrink: 0,
               padding: '8px 16px',
               border: 'none',
+              borderRadius: 0,
               borderLeft: i > 0 ? `1px solid ${theme.colors.border}` : 'none',
-              backgroundColor: isSelected ? theme.colors.primaryLight : 'transparent',
               color: opt.disabled ? theme.colors.textDisabled : isSelected ? theme.colors.primary : theme.colors.ink,
+              backgroundColor: isSelected ? theme.colors.accent : 'transparent',
               fontFamily: theme.typography.body,
               fontSize: theme.typography.size.sm,
               fontWeight: isSelected ? theme.typography.weight.semibold : theme.typography.weight.regular,
@@ -65,7 +68,7 @@ export const ToggleButtonGroup: React.FC<ToggleButtonGroupProps> = ({ options, v
             }}
           >
             {opt.label}
-          </button>
+          </Button>
         );
       })}
     </div>

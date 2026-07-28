@@ -1,4 +1,23 @@
 import { useState, useRef, useEffect } from "react";
+import { useTheme, type Theme } from './theme';
+import { useRipple } from './useRipple';
+
+export interface TermProps extends React.HTMLAttributes<HTMLElement> {
+  as?: React.ElementType;
+  p?: keyof Theme['spacing'];
+  controlscolor?: 'primary' | 'secondary' | 'surface' | 'surfaceSunken' | string;
+  bgcolor?: 'primary' | 'secondary' | 'surface' | 'surfaceSunken' | string;
+  variant?: 'primary' | 'secondary' | string;
+  children?: React.ReactNode;
+  controls?: boolean;
+}
+
+const bgKeyMap: Record<string, keyof Theme['colors']> = {
+  primary: 'primary',
+  secondary: 'accent',
+  surface: 'surface',
+  surfaceSunken: 'surfaceSunken',
+};
 
 const ANSI_COLORS: Record<string, string> = {
   "30": "#000000", "31": "#cd0000", "32": "#00cd00", "33": "#cdcd00",
@@ -62,7 +81,7 @@ interface Cell {
 
 interface RepeatingButtonProps {
   style: React.CSSProperties;
-  onAction: () => void;
+  onAction: (e?: React.PointerEvent<HTMLButtonElement>) => void;
   onFocus: () => void;
   children: React.ReactNode;
 }
@@ -75,14 +94,14 @@ const RepeatingButton = ({ style, onAction, onFocus, children }: RepeatingButton
     e.preventDefault();
     e.stopPropagation();
     
-    onAction();
+    onAction(e);
     onFocus();
 
     stopRepeat();
 
     timeoutRef.current = setTimeout(() => {
       intervalRef.current = setInterval(() => {
-        onAction();
+        onAction(e);
         onFocus();
       }, 60);
     }, 350);
@@ -116,13 +135,37 @@ const RepeatingButton = ({ style, onAction, onFocus, children }: RepeatingButton
   );
 };
 
-export default function Terminal(
-  {
-    controls
-  } : {
-    controls?: boolean
-  }
-) {
+export const Terminal: React.FC<TermProps> = ({
+  controls,
+  p,
+  bgcolor,
+  controlscolor,
+  variant = 'primary',
+  style,
+  children,
+  ...rest
+}) => {
+  const theme = useTheme();
+  const paddingValue = p ? theme.spacing[p] : undefined;
+  const bgKey = bgcolor && bgKeyMap[bgcolor];
+  const bgValue = bgKey ? theme.colors[bgKey] : bgcolor;
+  const controlsColorKey = controlscolor && bgKeyMap[controlscolor];
+  const controlsColorValue = controlsColorKey ? theme.colors[controlsColorKey] : controlscolor;
+  const { ripples, startRipple, endRipple } = useRipple(false);
+
+  const combinedStyles: React.CSSProperties = {
+    padding: paddingValue,
+    ...style,
+  };
+
+  const combinedStyles2: React.CSSProperties = {
+    padding: paddingValue,
+    backgroundColor: controlsColorValue,
+    ...style,
+  };
+
+  const rippleColor = variant === 'primary' ? 'rgba(255, 255, 255, 0.45)' : 'rgba(79, 70, 229, 0.25)';
+  
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -185,6 +228,15 @@ export default function Terminal(
 
   const cursorRef = useRef({ x: 0, y: 0 });
   const currentStyleRef = useRef({ fg: '#ffffff', bg: '#0a0a0a', inverse: false });
+
+  const handleClick = (e: React.UIEvent<any> | React.PointerEvent<any>) => {
+    if ((e.detail === 0 || e.type === 'pointerdown')) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height) * 1.3;
+      startRipple(rect.width / 2 - size / 2, rect.height / 2 - size / 2, size);
+      window.setTimeout(endRipple, 120);
+    }
+  };
 
   const clearGrid = (clearHistory = false) => {
     gridRef.current = Array.from({ length: ROWS }, () =>
@@ -737,7 +789,7 @@ export default function Terminal(
       ctx.save();
       ctx.scale(dpr, dpr);
 
-      ctx.fillStyle = '#0a0a0a';
+      ctx.fillStyle = bgValue || '#0a0a0a';
       ctx.fillRect(0, 0, CONTAINER_WIDTH, CONTAINER_HEIGHT);
 
       ctx.font = '18px "Courier New", Courier, monospace';
@@ -807,10 +859,10 @@ export default function Terminal(
   };
 
   const buttonStyle = (active: boolean) => ({
-    background: active ? "#ffffff" : "#1e1e1e",
+    background: active ? `color-mix(in srgb, ${controlsColorValue} 60%, #ffffff)` : controlsColorValue,
     color: active ? "#000000" : "#ffffff",
-    border: "1px solid #333",
-    borderRadius: "5px",
+    border: 'none',
+    borderRadius: "10px",
     width: "100%",
     height: "44px", 
     fontSize: "11px",
@@ -824,11 +876,17 @@ export default function Terminal(
     justifyContent: "center",
     userSelect: "none" as const,
     WebkitUserSelect: "none" as const,
-    WebkitTouchCallout: "none" as const,
+    WebkitTouchCallout: "none" as const
   });
 
   return (
-    <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-start", gap: "8px" }}>
+    <div style={{
+      display: "flex", 
+      flexDirection: "row", 
+      alignItems: "flex-start", 
+      gap: "8px",
+      ...combinedStyles
+    }}>
       
       <div 
         ref={containerRef}
@@ -839,7 +897,6 @@ export default function Terminal(
           height: CONTAINER_HEIGHT, 
           borderRadius: 10, 
           overflow: "hidden",
-          border: "1px solid #222"
         }}
       >
         <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
@@ -859,7 +916,7 @@ export default function Terminal(
             zIndex: 2,
             pointerEvents: "none"
           }}>
-            Reconnecting current terminal session...
+            Reconnecting...
           </div>
         )}
 
@@ -900,7 +957,7 @@ export default function Terminal(
         width: "114px", 
         height: CONTAINER_HEIGHT 
       }}>
-        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b", true)} onFocus={forceFocus}>
+        <RepeatingButton style={buttonStyle(false)} onAction={(e) => {sendKeyStroke("\x1b", true);handleClick(e);}} onFocus={forceFocus}>
           ESC
         </RepeatingButton>
         <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[5~", true)} onFocus={forceFocus}>
@@ -956,6 +1013,25 @@ export default function Terminal(
           →
         </RepeatingButton>
       </div>) : null}
+
+      {ripples.map((r) => (
+            <span
+              key={r.id}
+              style={{
+                position: 'absolute',
+                left: r.x,
+                top: r.y,
+                width: r.size,
+                height: r.size,
+                borderRadius: '50%',
+                backgroundColor: rippleColor,
+                transform: r.active ? 'scale(1)' : 'scale(0)',
+                opacity: r.exiting ? 0 : 0.45,
+                transition: r.exiting ? 'opacity 300ms ease-out' : 'transform 450ms cubic-bezier(0.4, 0, 0.2, 1)',
+                pointerEvents: 'none',
+              }}
+            />
+          ))}
 
     </div>
   );
