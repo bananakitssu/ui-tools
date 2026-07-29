@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useTheme, type Theme } from './theme';
-import { useRipple } from './useRipple';
+import { Button } from './Button';
 
 export interface TermProps extends React.HTMLAttributes<HTMLElement> {
   as?: React.ElementType;
@@ -10,6 +10,8 @@ export interface TermProps extends React.HTMLAttributes<HTMLElement> {
   variant?: 'primary' | 'secondary' | string;
   children?: React.ReactNode;
   controls?: boolean;
+  width?: number;
+  height?: number;
 }
 
 const bgKeyMap: Record<string, keyof Theme['colors']> = {
@@ -18,6 +20,17 @@ const bgKeyMap: Record<string, keyof Theme['colors']> = {
   surface: 'surface',
   surfaceSunken: 'surfaceSunken',
 };
+
+interface Point {
+  x: number;
+  lineIndex: number;
+}
+
+interface SelectionState {
+  start: Point | null;
+  end: Point | null;
+  isSelecting: boolean;
+}
 
 const ANSI_COLORS: Record<string, string> = {
   "30": "#000000", "31": "#cd0000", "32": "#00cd00", "33": "#cdcd00",
@@ -123,7 +136,7 @@ const RepeatingButton = ({ style, onAction, onFocus, children }: RepeatingButton
   }, []);
 
   return (
-    <button
+    <Button
       style={style}
       onPointerDown={startRepeat}
       onPointerUp={stopRepeat}
@@ -131,7 +144,7 @@ const RepeatingButton = ({ style, onAction, onFocus, children }: RepeatingButton
       onPointerCancel={stopRepeat}
     >
       {children}
-    </button>
+    </Button>
   );
 };
 
@@ -140,9 +153,11 @@ export const Terminal: React.FC<TermProps> = ({
   p,
   bgcolor,
   controlscolor,
-  variant = 'primary',
+  variant = 'secondary',
   style,
   children,
+  width,
+  height,
   ...rest
 }) => {
   const theme = useTheme();
@@ -151,20 +166,80 @@ export const Terminal: React.FC<TermProps> = ({
   const bgValue = bgKey ? theme.colors[bgKey] : bgcolor;
   const controlsColorKey = controlscolor && bgKeyMap[controlscolor];
   const controlsColorValue = controlsColorKey ? theme.colors[controlsColorKey] : controlscolor;
-  const { ripples, startRipple, endRipple } = useRipple(false);
+  const scrollingDisabled = useRef(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const [restartable, setRestartable] = useState(true);
+  const waitingRef = useRef<string[]>([]);
+  const getGridPosFromPointer = (e: React.PointerEvent | MouseEvent) => {
+  if (!canvasRef.current) return null;
+  const rect = canvasRef.current.getBoundingClientRect();
+
+  const px = e.clientX - rect.left - PADDING;
+  const py = e.clientY - rect.top - PADDING;
+
+  const col = Math.floor(px / CHARACTER_WIDTH);
+  const row = Math.floor(py / CHARACTER_HEIGHT);
+
+  const clampedX = Math.max(0, Math.min(COLS - 1, col));
+  const clampedY = Math.max(0, Math.min(ROWS - 1, row));
+
+  const totalLines = scrollbackRef.current.length + gridRef.current.length;
+  const startIndex = totalLines - ROWS - scrollOffsetRef.current;
+  const lineIndex = startIndex + clampedY;
+
+  return { x: clampedX, lineIndex };
+};
+  const getSelectedText = (combinedBuffer: Cell[][], sel: SelectionState): string => {
+  if (!sel.start || !sel.end) return "";
+
+  let start = sel.start;
+  let end = sel.end;
+
+  if (
+    start.lineIndex > end.lineIndex ||
+    (start.lineIndex === end.lineIndex && start.x > end.x)
+  ) {
+    [start, end] = [end, start];
+  }
+
+  let result = "";
+
+  for (let r = start.lineIndex; r <= end.lineIndex; r++) {
+    const row = combinedBuffer[r];
+    if (!row) continue;
+
+    const isStartRow = r === start.lineIndex;
+    const isEndRow = r === end.lineIndex;
+
+    const startX = isStartRow ? start.x : 0;
+    const endX = isEndRow ? end.x : COLS - 1;
+
+    const rowSlice = row.slice(startX, endX + 1);
+    const lineText = rowSlice.map((cell) => cell?.char ?? " ").join("");
+
+    const isFullRow = endX === COLS - 1;
+    const lastCellChar = row[COLS - 1]?.char ?? " ";
+    const isSoftWrapped = !isEndRow && isFullRow && lastCellChar !== " ";
+
+    if (isSoftWrapped) {
+      result += lineText;
+    } else {
+      result += lineText.trimEnd();
+      if (!isEndRow) {
+        result += "\n";
+      }
+    }
+  }
+
+  return result;
+};
 
   const combinedStyles: React.CSSProperties = {
     padding: paddingValue,
     ...style,
   };
 
-  const combinedStyles2: React.CSSProperties = {
-    padding: paddingValue,
-    backgroundColor: controlsColorValue,
-    ...style,
-  };
 
-  const rippleColor = variant === 'primary' ? 'rgba(255, 255, 255, 0.45)' : 'rgba(79, 70, 229, 0.25)';
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -184,6 +259,8 @@ export const Terminal: React.FC<TermProps> = ({
   const altPressedRef = useRef(false);
   const shiftPressedRef = useRef(false);
 
+  const [_y_, set_y_] = useState(0);
+
   const setCtrlPressed = (val: boolean) => {
     ctrlPressedRef.current = val;
     setCtrlPressedState(val);
@@ -196,15 +273,60 @@ export const Terminal: React.FC<TermProps> = ({
     shiftPressedRef.current = val;
     setShiftPressedState(val);
   };
+  const selectionRef = useRef<SelectionState>({
+  start: null,
+  end: null,
+  isSelecting: false,
+});
+  const isCellSelected = (x: number, lineIndex: number): boolean => {
+  const sel = selectionRef.current;
+  if (!sel.start || !sel.end) return false;
 
-  const COLS = 29;
-  const ROWS = 20; 
+  let start = sel.start;
+  let end = sel.end;
+
+  if (
+    start.lineIndex > end.lineIndex ||
+    (start.lineIndex === end.lineIndex && start.x > end.x)
+  ) {
+    [start, end] = [end, start];
+  }
+
+  if (lineIndex < start.lineIndex || lineIndex > end.lineIndex) return false;
+  if (start.lineIndex === end.lineIndex) {
+    return x >= start.x && x <= end.x;
+  }
+  if (lineIndex === start.lineIndex) return x >= start.x;
+  if (lineIndex === end.lineIndex) return x <= end.x;
+
+  return true;
+};
+const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
+const mouseStateRef = useRef<{
+  isDown: boolean;
+  startCoords: Point | null;
+  startPos: { x: number; y: number } | null;
+}>({ isDown: false, startCoords: null, startPos: null });
+
+const touchStateRef = useRef<{
+  startPos: { x: number; y: number } | null;
+  lastPosY: number | null;
+  isLongPress: boolean;
+}>({ startPos: null, lastPosY: null, isLongPress: false });
+
+const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
+
   const PADDING = 8;
   const CHARACTER_WIDTH = 9.6; 
   const CHARACTER_HEIGHT = 18;  
+  const CONTAINER_WIDTH = width ?? 295; 
+  const CONTAINER_HEIGHT = height ?? 380; 
 
-  const CONTAINER_WIDTH = 295; 
-  const CONTAINER_HEIGHT = 380; 
+  const ROWS = Math.floor((CONTAINER_HEIGHT - (controls ? 132 : 0) - PADDING) / CHARACTER_HEIGHT); 
+
+  const COLS = Math.floor((CONTAINER_WIDTH - PADDING) / CHARACTER_WIDTH); 
+
+  console.log(ROWS, COLS); 
 
   const gridRef = useRef<Cell[][]>(
     Array.from({ length: ROWS }, () =>
@@ -229,14 +351,33 @@ export const Terminal: React.FC<TermProps> = ({
   const cursorRef = useRef({ x: 0, y: 0 });
   const currentStyleRef = useRef({ fg: '#ffffff', bg: '#0a0a0a', inverse: false });
 
-  const handleClick = (e: React.UIEvent<any> | React.PointerEvent<any>) => {
-    if ((e.detail === 0 || e.type === 'pointerdown')) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const size = Math.max(rect.width, rect.height) * 1.3;
-      startRipple(rect.width / 2 - size / 2, rect.height / 2 - size / 2, size);
-      window.setTimeout(endRipple, 120);
-    }
-  };
+  const [tick, setTick] = useState(0);
+
+  const getGridCoords = (
+  e: MouseEvent | Touch,
+  canvas: HTMLCanvasElement
+): Point => {
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left - PADDING;
+  const mouseY = e.clientY - rect.top - PADDING;
+
+  const visualY = Math.max(0, Math.min(ROWS - 1, Math.floor(mouseY / CHARACTER_HEIGHT)));
+  const x = Math.max(0, Math.min(COLS - 1, Math.floor(mouseX / CHARACTER_WIDTH)));
+
+  const scrollOffset = scrollOffsetRef.current;
+  const combined = [...scrollbackRef.current, ...gridRef.current];
+  const totalLines = combined.length;
+  const startIndex = totalLines - ROWS - scrollOffset;
+  const lineIndex = startIndex + visualY;
+
+  return { x, lineIndex };
+};
+
+  useEffect(() => {
+    set_y_(cursorRef.current?.y ?? 0);
+  }, [tick])
+
+
 
   const clearGrid = (clearHistory = false) => {
     gridRef.current = Array.from({ length: ROWS }, () =>
@@ -249,7 +390,27 @@ export const Terminal: React.FC<TermProps> = ({
     }
   };
 
-  const writeToTerminal = (data: string) => {
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+  e.preventDefault();
+  
+  const pastedText = e.clipboardData.getData("text");
+  if (!pastedText) return;
+
+  const formattedText = pastedText.replace(/\r?\n/g, "\r\n");
+
+  if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+    wsRef.current.send(
+      JSON.stringify({
+        type: "input",
+        data: formattedText,
+      })
+    );
+  }
+};
+
+  const writeToTerminal = (rawData: string) => {
+    const data = rawData.replace(/(?<!\r)\n/g, "\r\n");
+    
     const grid = gridRef.current;
     let { x, y } = cursorRef.current;
     let style = currentStyleRef.current;
@@ -299,6 +460,8 @@ export const Terminal: React.FC<TermProps> = ({
         i++;
       } else if (char === '\b') {
         x = Math.max(0, x - 1);
+        i++;
+      } else if (char === '\x07') {
         i++;
       } else if (char === '\x1b') {
         const nextChar = data[i + 1];
@@ -512,6 +675,7 @@ export const Terminal: React.FC<TermProps> = ({
     }
 
     cursorRef.current = { x, y };
+    setTick(t => t + 1);
     currentStyleRef.current = style;
   };
 
@@ -548,12 +712,34 @@ export const Terminal: React.FC<TermProps> = ({
               processed = true;
             } 
             else if (payload.type === "history" || payload.type === "recovery") {
+              if (payload.type === "history") {
+                for (const item of waitingRef.current)
+                  ws.send(JSON.stringify({ type: "input", data: item }));
+                waitingRef.current = [];
+              }
               clearGrid(true);
               const historyData = payload.history || payload.data || payload.logs || "";
               if (historyData) {
                 writeToTerminal(historyData);
               }
               processed = true;
+            } else if (payload.type === "exit") {
+              const historyData = `\n\x1b[31mThe terminal exited.\x1b[33m\n\nCODE: ${payload.code}\nSIGNAL: ${payload.signal}\x1b[0m`;
+              setRestartable(false);
+              if (historyData) {
+                writeToTerminal(historyData);
+              }
+              processed = true;
+            } else if (payload.type === "giveInit") {
+              ws.send(JSON.stringify({
+                type: "init",
+                data: {
+                  sessionId: sessionIdRef.current,
+                  cols: COLS,
+                  rows: ROWS
+                }
+              }))
+              processed = true
             }
           }
         } catch (_) {}
@@ -582,7 +768,10 @@ export const Terminal: React.FC<TermProps> = ({
   }, []);
 
   const sendKeyStroke = (rawKey: string, isControlChar = false) => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      waitingRef.current.push(rawKey);
+      return;
+    };
 
     if (!isAltScreenRef.current) {
       scrollOffsetRef.current = 0;
@@ -718,6 +907,7 @@ export const Terminal: React.FC<TermProps> = ({
 
     const handleWheelEvent = (e: WheelEvent) => {
       e.preventDefault(); 
+      if (scrollingDisabled.current) return;
       if (isAltScreenRef.current) {
         if (e.deltaY < 0) sendKeyStroke("\x1b[A", true);
         else if (e.deltaY > 0) sendKeyStroke("\x1b[B", true);
@@ -729,6 +919,7 @@ export const Terminal: React.FC<TermProps> = ({
     };
 
     const handleTouchStartRaw = (e: TouchEvent) => {
+      if (scrollingDisabled.current) return;
       if (e.touches.length === 1) {
         touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
         touchAccumulatedRef.current = 0;
@@ -736,6 +927,7 @@ export const Terminal: React.FC<TermProps> = ({
     };
 
     const handleTouchMoveRaw = (e: TouchEvent) => {
+      if (scrollingDisabled.current) return;
       if (e.touches.length === 1) {
         e.preventDefault(); 
         const currentY = e.touches[0].clientY;
@@ -772,6 +964,138 @@ export const Terminal: React.FC<TermProps> = ({
   }, []);
 
   useEffect(() => {
+  const canvas = canvasRef.current;
+  if (!canvas) return;
+
+  const mouseStartPosRef = { current: null as { x: number; y: number } | null };
+  const touchStartPosRef = { current: null as { x: number; y: number } | null };
+  const longPressTimerRef = { current: null as NodeJS.Timeout | number | null };
+
+  const handleGlobalPointerDown = (e: MouseEvent | TouchEvent) => {
+    if (canvasRef.current && !canvasRef.current.contains(e.target as Node)) {
+      selectionRef.current = { start: null, end: null, isSelecting: false };
+    }
+  };
+
+  const handleMouseDown = (e: MouseEvent) => {
+    if (e.button !== 0) return;
+    const coords = getGridCoords(e, canvas);
+    mouseStartPosRef.current = { x: e.clientX, y: e.clientY };
+    selectionRef.current.start = coords;
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!mouseStartPosRef.current) return;
+    const coords = getGridCoords(e, canvas);
+    const startPos = mouseStartPosRef.current;
+
+    const dist = Math.hypot(e.clientX - startPos.x, e.clientY - startPos.y);
+    const movedInGrid =
+      selectionRef.current.start?.x !== coords.x ||
+      selectionRef.current.start?.lineIndex !== coords.lineIndex;
+
+    if (!selectionRef.current.isSelecting && (dist > 3 || movedInGrid)) {
+      selectionRef.current.isSelecting = true;
+      scrollingDisabled.current = true;
+    }
+
+    if (selectionRef.current.isSelecting) {
+      selectionRef.current.end = coords;
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (mouseStartPosRef.current) {
+      if (!selectionRef.current.isSelecting) {
+        selectionRef.current = { start: null, end: null, isSelecting: false };
+        scrollingDisabled.current = false;
+      } else {
+        selectionRef.current.isSelecting = false;
+        scrollingDisabled.current = false;
+      }
+    }
+    mouseStartPosRef.current = null;
+  };
+
+  const handleTouchStart = (e: TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    const coords = getGridCoords(touch, canvas);
+
+    touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
+
+    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+
+    longPressTimerRef.current = setTimeout(() => {
+      selectionRef.current = { start: coords, end: coords, isSelecting: true };
+      scrollingDisabled.current = true;
+      if (navigator.vibrate) navigator.vibrate(30);
+    }, 500);
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+
+    if (!selectionRef.current.isSelecting) {
+      if (touchStartPosRef.current) {
+        const dist = Math.hypot(
+          touch.clientX - touchStartPosRef.current.x,
+          touch.clientY - touchStartPosRef.current.y
+        );
+        if (dist > 8 && longPressTimerRef.current) {
+          clearTimeout(longPressTimerRef.current);
+        }
+      }
+      return; 
+    }
+
+    if (e.cancelable) e.preventDefault();
+    const coords = getGridCoords(touch, canvas);
+    selectionRef.current.end = coords;
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+
+    if (!selectionRef.current.isSelecting) {
+      selectionRef.current = { start: null, end: null, isSelecting: false };
+      scrollingDisabled.current = false;
+    }
+
+    selectionRef.current.isSelecting = false;
+    scrollingDisabled.current = false;
+    touchStartPosRef.current = null;
+  };
+
+  window.addEventListener('mousedown', handleGlobalPointerDown);
+  window.addEventListener('touchstart', handleGlobalPointerDown);
+
+  canvas.addEventListener('mousedown', handleMouseDown);
+  window.addEventListener('mousemove', handleMouseMove);
+  window.addEventListener('mouseup', handleMouseUp);
+
+  canvas.addEventListener('touchstart', handleTouchStart, { passive: true });
+  canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+  window.addEventListener('touchend', handleTouchEnd);
+  window.addEventListener('touchcancel', handleTouchEnd);
+
+  return () => {
+    window.removeEventListener('mousedown', handleGlobalPointerDown);
+    window.removeEventListener('touchstart', handleGlobalPointerDown);
+
+    canvas.removeEventListener('mousedown', handleMouseDown);
+    window.removeEventListener('mousemove', handleMouseMove);
+    window.removeEventListener('mouseup', handleMouseUp);
+
+    canvas.removeEventListener('touchstart', handleTouchStart);
+    canvas.removeEventListener('touchmove', handleTouchMove);
+    window.removeEventListener('touchend', handleTouchEnd);
+    window.removeEventListener('touchcancel', handleTouchEnd);
+  };
+}, [connectionState]);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -779,7 +1103,7 @@ export const Terminal: React.FC<TermProps> = ({
 
     const dpr = window.devicePixelRatio || 1;
     canvas.width = CONTAINER_WIDTH * dpr;
-    canvas.height = CONTAINER_HEIGHT * dpr;
+    canvas.height = (CONTAINER_HEIGHT - (controls ? 132 : 0)) * dpr;
 
     let animationFrameId: number;
     let cursorBlink = true;
@@ -800,27 +1124,6 @@ export const Terminal: React.FC<TermProps> = ({
       const totalLines = combined.length;
       const startIndex = totalLines - ROWS - scrollOffset;
 
-      for (let y = 0; y < ROWS; y++) {
-        const lineIndex = startIndex + y;
-        const rowCells = combined[lineIndex] || Array.from({ length: COLS }, () => ({ char: ' ', fg: '#ffffff', bg: '#0a0a0a' }));
-
-        for (let x = 0; x < COLS; x++) {
-          const cell = rowCells[x] || { char: ' ', fg: '#ffffff', bg: '#0a0a0a' };
-          const px = PADDING + x * CHARACTER_WIDTH;
-          const py = PADDING + y * CHARACTER_HEIGHT;
-
-          if (cell.bg !== '#0a0a0a') {
-            ctx.fillStyle = cell.bg;
-            ctx.fillRect(px, py, Math.ceil(CHARACTER_WIDTH), CHARACTER_HEIGHT);
-          }
-
-          if (cell.char !== ' ') {
-            ctx.fillStyle = cell.fg;
-            ctx.fillText(cell.char, px, py);
-          }
-        }
-      }
-
       if (Date.now() - lastBlinkTime > 500) {
         lastBlinkTime = Date.now();
       }
@@ -839,12 +1142,84 @@ export const Terminal: React.FC<TermProps> = ({
         }
       }
 
+
+      for (let y = 0; y < ROWS; y++) {
+        const cords = cursorRef.current;
+        const lineIndex = startIndex + y;
+        const rowCells = combined[lineIndex] || Array.from({ length: COLS }, () => ({ char: ' ', fg: '#ffffff', bg: '#0a0a0a' }));
+
+        for (let x = 0; x < COLS; x++) {
+  const cell = rowCells[x] || { char: ' ', fg: '#ffffff', bg: '#0a0a0a' };
+  const isCursor = (x === cords.x && y === cords.y);
+  const selected = isCellSelected(x, lineIndex);
+
+  const px = PADDING + x * CHARACTER_WIDTH;
+  const py = PADDING + y * CHARACTER_HEIGHT;
+
+    const DEFAULT_BG = '#0a0a0a';
+const DEFAULT_FG = '#ffffff';
+
+const hasCustomBg = cell.bg && cell.bg !== DEFAULT_BG;
+
+const bgColor = selected
+  ? (hasCustomBg 
+      ? DEFAULT_FG 
+      : (cell.fg ?? DEFAULT_FG))
+  : (hasCustomBg ? cell.bg : null);
+
+if (bgColor) {
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(px, py, Math.ceil(CHARACTER_WIDTH), CHARACTER_HEIGHT);
+}
+
+  const fgColor = selected ? '#000000' : (isCursor ? '#000000' : (cell.fg || '#ffffff'));
+  if (cell.char !== ' ') {
+    ctx.fillStyle = fgColor;
+    ctx.fillText(cell.char, px, py);
+  }
+        }
+      }
+
+      const sel = selectionRef.current;
+  const popoverEl = popoverRef.current;
+
+  if (popoverEl) {
+    if (sel.start && sel.end && !sel.isSelecting) {
+      let start = sel.start;
+      let end = sel.end;
+
+      if (
+        start.lineIndex > end.lineIndex ||
+        (start.lineIndex === end.lineIndex && start.x > end.x)
+      ) {
+        [start, end] = [end, start];
+      }
+
+      const visualY = start.lineIndex - startIndex;
+
+      if (visualY < 0 || visualY >= ROWS) {
+        popoverEl.style.display = 'none';
+      } else {
+        const px = PADDING + start.x * CHARACTER_WIDTH;
+        const py = PADDING + visualY * CHARACTER_HEIGHT;
+
+        popoverEl.style.display = 'flex';
+        popoverEl.style.left = `${px}px`;
+        popoverEl.style.top = `${py}px`;
+      }
+    } else {
+      popoverEl.style.display = 'none';
+    }
+  }
+      
       ctx.restore();
       animationFrameId = requestAnimationFrame(render);
     };
 
     render();
-    return () => cancelAnimationFrame(animationFrameId);
+    return () =>  {
+      cancelAnimationFrame(animationFrameId);
+    }
   }, [connectionState]);
 
   const forceFocus = () => {
@@ -858,12 +1233,12 @@ export const Terminal: React.FC<TermProps> = ({
     forceFocus();
   };
 
-  const buttonStyle = (active: boolean) => ({
-    background: active ? `color-mix(in srgb, ${controlsColorValue} 60%, #ffffff)` : controlsColorValue,
+  const buttonStyle = (active: boolean, restart?: boolean) => ({
+    background: active ? `color-mix(in srgb, ${controlsColorValue || "#000000"} 60%, #ffffff)` : (controlsColorValue || "#1a1a1a"),
     color: active ? "#000000" : "#ffffff",
     border: 'none',
-    borderRadius: "10px",
-    width: "100%",
+    borderRadius: "0",
+    width: (restart ? "200%" : "100%"),
     height: "44px", 
     fontSize: "11px",
     fontFamily: "monospace",
@@ -879,6 +1254,10 @@ export const Terminal: React.FC<TermProps> = ({
     WebkitTouchCallout: "none" as const
   });
 
+  const stopEvent = (e: React.SyntheticEvent) => {
+  e.stopPropagation();
+};
+
   return (
     <div style={{
       display: "flex", 
@@ -886,7 +1265,87 @@ export const Terminal: React.FC<TermProps> = ({
       alignItems: "flex-start", 
       gap: "8px",
       ...combinedStyles
-    }}>
+    }}
+      {...rest}>
+
+      <div
+        style={{
+          position: "relative"
+        }}
+      >
+  <div
+    ref={popoverRef}
+    style={{
+      position: "absolute",
+      display: "none", 
+      transform: "translate(0, -100%)", 
+      marginTop: "-6px", 
+      zIndex: 10,
+      backgroundColor: "#1e1e1e",
+      border: "1px solid #333",
+      borderRadius: "999px",
+      padding: "4px 8px",
+      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.5)",
+      alignItems: "center",
+      gap: "6px",
+      pointerEvents: "auto",
+    }}
+    onPointerDown={stopEvent}
+  onPointerUp={stopEvent}
+  onMouseDown={stopEvent}
+  onMouseUp={stopEvent}
+  onTouchStart={stopEvent}
+  onTouchEnd={stopEvent}
+  onClick={stopEvent}
+  >
+    <button
+  onPointerDown={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }}
+  onClick={async (e) => {
+    e.stopPropagation();
+    console.log("test")
+
+    const combined = [...scrollbackRef.current, ...gridRef.current];
+const textToCopy = getSelectedText(combined, selectionRef.current);
+    console.log(textToCopy)
+    if (!textToCopy) return;
+
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(textToCopy);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = textToCopy;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      }
+    } catch (err) {
+      console.error("Failed to copy text: ", err);
+    }
+
+    selectionRef.current = { start: null, end: null, isSelecting: false };
+    if (popoverRef.current) popoverRef.current.style.display = 'none';
+    forceFocus();
+  }}
+  style={{
+    background: "#333",
+    color: "#fff",
+    border: "none",
+    borderRadius: "999px",
+    padding: "4px 8px",
+    fontSize: "11px",
+    fontFamily: "monospace",
+    cursor: "pointer",
+  }}
+>
+  Copy
+</button>
+  </div>
+      </div>
       
       <div 
         ref={containerRef}
@@ -896,10 +1355,82 @@ export const Terminal: React.FC<TermProps> = ({
           width: CONTAINER_WIDTH,
           height: CONTAINER_HEIGHT, 
           borderRadius: 10, 
+          backgroundColor: "#333",
           overflow: "hidden",
         }}
       >
-        <canvas ref={canvasRef} style={{ width: "100%", height: "100%", display: "block" }} />
+        <canvas ref={canvasRef} style={{ touchAction: 'none', width: "100%", height: (CONTAINER_HEIGHT - (controls ? 132 : 0)) + "px", display: "block" }} />
+
+        {controls ? (<div style={{ 
+        display: "grid", 
+        gridTemplateColumns: "repeat(6, 1fr)", 
+        width: CONTAINER_WIDTH, 
+        height: "132px", 
+        bottom: 0,
+      }}>
+        <RepeatingButton style={buttonStyle(false)} onAction={(e) => {sendKeyStroke("\x1b", true);}} onFocus={forceFocus}>
+          ESC
+        </RepeatingButton>
+        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[5~", true)} onFocus={forceFocus}>
+          PGUP
+        </RepeatingButton>
+
+        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\t", true)} onFocus={forceFocus}>
+          TAB
+        </RepeatingButton>
+        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[6~", true)} onFocus={forceFocus}>
+          PGDN
+        </RepeatingButton>
+
+        <Button style={buttonStyle(ctrlPressed)} onPointerDown={(e) => handleToggleClick(e, () => setCtrlPressed(!ctrlPressed))}>
+          CTRL
+        </Button>
+        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("-")} onFocus={forceFocus}>
+          -
+        </RepeatingButton>
+
+        <Button style={buttonStyle(altPressed)} onPointerDown={(e) => handleToggleClick(e, () => setAltPressed(!altPressed))}>
+          ALT
+        </Button>
+        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\\")} onFocus={forceFocus}>
+          \
+        </RepeatingButton>
+
+        <Button style={buttonStyle(shiftPressed)} onPointerDown={(e) => handleToggleClick(e, () => setShiftPressed(!shiftPressed))}>
+          SHFT
+        </Button>
+        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[A", true)} onFocus={forceFocus}>
+          ↑
+        </RepeatingButton>
+
+        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("/")} onFocus={forceFocus}>
+          /
+        </RepeatingButton>
+        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[D", true)} onFocus={forceFocus}>
+          ←
+        </RepeatingButton>
+
+        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[H", true)} onFocus={forceFocus}>
+          HOME
+        </RepeatingButton>
+        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[B", true)} onFocus={forceFocus}>
+          ↓
+        </RepeatingButton>
+
+        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[F", true)} onFocus={forceFocus}>
+          END
+        </RepeatingButton>
+        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[C", true)} onFocus={forceFocus}>
+          →
+        </RepeatingButton>
+        <Button style={buttonStyle(false, true)} onClick={() => {
+        clearGrid(true);
+        setRestartable(true);
+        wsRef.current?.send(JSON.stringify({ type: (restartable ? "restart" : "init"), data: { cols: COLS, rows: ROWS, sessionId: sessionIdRef.current } }))
+      }} onFocus={forceFocus}>
+          {restartable ? "Restart" : "Start"}
+        </Button>
+        </div>) : null}
         
         {connectionState === "reconnecting" && (
           <div style={{
@@ -926,6 +1457,7 @@ export const Terminal: React.FC<TermProps> = ({
           value={inputValue} 
           onChange={handleInputChange} 
           onKeyDown={handleKeyDown} 
+          onPaste={handlePaste}
           aria-hidden="true" 
           autoCapitalize="none" 
           autoCorrect="off" 
@@ -933,10 +1465,10 @@ export const Terminal: React.FC<TermProps> = ({
           spellCheck="false" 
           style={{ 
             position: "absolute", 
-            top: 0, 
+            top: (PADDING + _y_ * CHARACTER_HEIGHT) + "px", 
             left: 0, 
-            width: "100%", 
-            height: "100%", 
+            width: CONTAINER_WIDTH, 
+            height: CHARACTER_HEIGHT + "px", 
             opacity: 0, 
             background: "transparent", 
             border: "none", 
@@ -944,94 +1476,15 @@ export const Terminal: React.FC<TermProps> = ({
             color: "transparent", 
             caretColor: "transparent", 
             fontSize: "16px", 
-            zIndex: 1,
+            zIndex: -1,
             cursor: "text"
           }} 
         />
       </div>
 
-      {controls ? (<div style={{ 
-        display: "grid", 
-        gridTemplateColumns: "repeat(2, 1fr)", 
-        gap: "4px", 
-        width: "114px", 
-        height: CONTAINER_HEIGHT 
-      }}>
-        <RepeatingButton style={buttonStyle(false)} onAction={(e) => {sendKeyStroke("\x1b", true);handleClick(e);}} onFocus={forceFocus}>
-          ESC
-        </RepeatingButton>
-        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[5~", true)} onFocus={forceFocus}>
-          PGUP
-        </RepeatingButton>
+      /*
+        <RepeatingButton style={buttonStyle(false)} onAction={(e) => {sendKeyStroke("\x1b", true);}
 
-        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\t", true)} onFocus={forceFocus}>
-          TAB
-        </RepeatingButton>
-        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[6~", true)} onFocus={forceFocus}>
-          PGDN
-        </RepeatingButton>
-
-        <button style={buttonStyle(ctrlPressed)} onPointerDown={(e) => handleToggleClick(e, () => setCtrlPressed(!ctrlPressed))}>
-          CTRL
-        </button>
-        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("-")} onFocus={forceFocus}>
-          -
-        </RepeatingButton>
-
-        <button style={buttonStyle(altPressed)} onPointerDown={(e) => handleToggleClick(e, () => setAltPressed(!altPressed))}>
-          ALT
-        </button>
-        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\\")} onFocus={forceFocus}>
-          \
-        </RepeatingButton>
-
-        <button style={buttonStyle(shiftPressed)} onPointerDown={(e) => handleToggleClick(e, () => setShiftPressed(!shiftPressed))}>
-          SHFT
-        </button>
-        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[A", true)} onFocus={forceFocus}>
-          ↑
-        </RepeatingButton>
-
-        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("/")} onFocus={forceFocus}>
-          /
-        </RepeatingButton>
-        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[D", true)} onFocus={forceFocus}>
-          ←
-        </RepeatingButton>
-
-        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[H", true)} onFocus={forceFocus}>
-          HOME
-        </RepeatingButton>
-        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[B", true)} onFocus={forceFocus}>
-          ↓
-        </RepeatingButton>
-
-        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[F", true)} onFocus={forceFocus}>
-          END
-        </RepeatingButton>
-        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[C", true)} onFocus={forceFocus}>
-          →
-        </RepeatingButton>
-      </div>) : null}
-
-      {ripples.map((r) => (
-            <span
-              key={r.id}
-              style={{
-                position: 'absolute',
-                left: r.x,
-                top: r.y,
-                width: r.size,
-                height: r.size,
-                borderRadius: '50%',
-                backgroundColor: rippleColor,
-                transform: r.active ? 'scale(1)' : 'scale(0)',
-                opacity: r.exiting ? 0 : 0.45,
-                transition: r.exiting ? 'opacity 300ms ease-out' : 'transform 450ms cubic-bezier(0.4, 0, 0.2, 1)',
-                pointerEvents: 'none',
-              }}
-            />
-          ))}
 
     </div>
   );

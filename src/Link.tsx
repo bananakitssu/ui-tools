@@ -20,13 +20,13 @@ export const Link: React.FC<LinkProps> = ({
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (onClick) onClick(e);
-    window.location.href = href;
+    window.location.href = href ?? "";
   };
   
   return (
     <a onClick={(e) => {
       handleClick(e);
-    }} href={href} style={{ ...style }} {...rest}>
+    }} href={href ?? ""} style={{ ...style }} {...rest}>
       {children}
     </a>
   )
