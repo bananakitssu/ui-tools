@@ -72,7 +72,6 @@ export async function useTerminal(options: UseTerminalOptions = {}) {
 
             ws.send(JSON.stringify({ type: 'session', sessionId }));
             ws.send(JSON.stringify({ type: 'history', history: session.history }));
-
           } else {
             const newSessionId = crypto.randomUUID();
             clientSessionId = newSessionId;
@@ -88,7 +87,7 @@ export async function useTerminal(options: UseTerminalOptions = {}) {
 
             setTimeout(() => {
               if (shell === 'bash') {
-                ptyProcess.write('export PS1="\\[\\e[1;36m\\]\\w\\[\\e[0m\\] \\[\\e[1;32m\\]\\$\\[\\e[0m\\] "; clear\r');
+                ptyProcess.write('export PS1="\\[\\e[1;36m\\]\\w\\[\\e[0m\\]\\[\\e[1;32m\\]\\$\\[\\e[0m\\] "; clear\r');
               } else if (shell === 'powershell.exe') {
                 ptyProcess.write('function prompt { "PS $(get-location)> " }; clear\r');
               }
@@ -101,6 +100,10 @@ export async function useTerminal(options: UseTerminalOptions = {}) {
               history: '',
             };
             sessions.set(newSessionId, sessionState);
+            ptyProcess.onExit((e: any) => {
+            ws.send(JSON.stringify({ type: "exit", code: e.exitCode, signal: e.signal}));
+            sessions.delete(newSessionId);
+          })
 
             ptyProcess.onData((data: any) => {
               const current = sessions.get(newSessionId);
@@ -128,6 +131,10 @@ export async function useTerminal(options: UseTerminalOptions = {}) {
             } else if (parsed.type === 'resize') {
               const { cols, rows } = parsed.data;
               if (cols && rows) session.ptyProcess.resize(cols, rows);
+            } else if (parsed.type === "restart") {
+          session.history = "";
+          session.ptyProcess.kill();
+          ws.send(JSON.stringify({ type: "giveInit" }));
             }
           }
         }

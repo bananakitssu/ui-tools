@@ -324,7 +324,7 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
 
   const ROWS = Math.floor((CONTAINER_HEIGHT - (controls ? 132 : 0) - PADDING) / CHARACTER_HEIGHT); 
 
-  const COLS = Math.floor((CONTAINER_WIDTH - PADDING) / CHARACTER_WIDTH); 
+  const COLS = Math.floor((CONTAINER_WIDTH - PADDING) / CHARACTER_WIDTH) - 2; 
 
   console.log(ROWS, COLS); 
 
@@ -524,6 +524,10 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
             const targetX = parts[1] ? parseInt(parts[1], 10) - 1 : 0;
             y = Math.min(ROWS - 1, Math.max(0, targetY));
             x = Math.min(COLS - 1, Math.max(0, targetX));
+          } else if (commandLetter === "H") {
+            x = 0;
+            y = 0;
+            i++;
           } else if (commandLetter === 'A') {
             const amount = parseInt(sequence, 10) || 1;
             y = Math.max(0, y - amount);
@@ -555,10 +559,13 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
               }
               for (let col = 0; col <= Math.min(x, COLS - 1); col++) grid[y][col] = { char: ' ', fg: style.fg, bg: style.bg };
             } else if (mode === '2' || mode === '2J') {
-              for (let r = 0; r < ROWS; r++) {
-                for (let col = 0; col < COLS; col++) grid[r][col] = { char: ' ', fg: style.fg, bg: style.bg };
-              }
+              clearGrid();
+              scrollbackRef.current = [];
+            } else if (mode === '3' || mode === '3J') {
+              clearGrid();
+              scrollbackRef.current = [];
             }
+            console.log(mode);
           } else if (commandLetter === 'K') {
             const mode = sequence || '0';
             if (mode === '0' || mode === '0K') {
@@ -1101,7 +1108,7 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = window.devicePixelRatio * 2 || 2;
     canvas.width = CONTAINER_WIDTH * dpr;
     canvas.height = (CONTAINER_HEIGHT - (controls ? 132 : 0)) * dpr;
 
@@ -1115,6 +1122,17 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
 
       ctx.fillStyle = bgValue || '#0a0a0a';
       ctx.fillRect(0, 0, CONTAINER_WIDTH, CONTAINER_HEIGHT);
+      const trackHeight = CONTAINER_HEIGHT - (controls ? 132 : 0) - (PADDING * 2);
+const scrollThumbSize = Math.max(10, (ROWS / (scrollbackRef.current.length + ROWS)) * trackHeight);
+      const scrollThumbSize2 = Math.max(10, (ROWS / (0 + ROWS)) * trackHeight);
+
+const maxScrollOffset = scrollbackRef.current.length || 1;
+const rawRatio = Math.min(1, Math.max(0, Math.abs(scrollOffsetRef.current) / maxScrollOffset));
+
+const scrollRatio = 1 - rawRatio;
+
+const maxPos = trackHeight - scrollThumbSize;
+const pos = (scrollRatio * maxPos) + PADDING;
 
       ctx.font = '18px "Courier New", Courier, monospace';
       ctx.textBaseline = 'top';
@@ -1144,13 +1162,14 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
 
 
       for (let y = 0; y < ROWS; y++) {
+        const visualY = y + scrollOffset;
         const cords = cursorRef.current;
         const lineIndex = startIndex + y;
         const rowCells = combined[lineIndex] || Array.from({ length: COLS }, () => ({ char: ' ', fg: '#ffffff', bg: '#0a0a0a' }));
 
         for (let x = 0; x < COLS; x++) {
   const cell = rowCells[x] || { char: ' ', fg: '#ffffff', bg: '#0a0a0a' };
-  const isCursor = (x === cords.x && y === cords.y);
+  const isCursor = (x === cords.x && y === cords.y) && connectionState === "connected" && (x >= 0 && x < COLS && visualY >= 0 && visualY < ROWS);
   const selected = isCellSelected(x, lineIndex);
 
   const px = PADDING + x * CHARACTER_WIDTH;
@@ -1178,6 +1197,11 @@ if (bgColor) {
     ctx.fillText(cell.char, px, py);
   }
         }
+      }
+
+      ctx.fillStyle = '#ffffff';
+      if (scrollThumbSize != scrollThumbSize2) {
+        ctx.fillRect(CONTAINER_WIDTH - (CHARACTER_WIDTH * 2 - (CHARACTER_WIDTH / 2)) - PADDING, pos, (CHARACTER_WIDTH * 2 - (CHARACTER_WIDTH / 2)),  scrollThumbSize);
       }
 
       const sel = selectionRef.current;
