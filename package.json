@@ -7,8 +7,9 @@
     "ws": "^8.21.0"
   },
   "devDependencies": {
-    "@bananacool467/authtics-host": "^0.1.7",
+    "@bananacool467/authtics-host": "^0.2.5",
     "@bananacool467/pt": "^0.1.0-beta.4",
+    "@bananacool467/ui-tools": "file:pack&bananacool467:ui-tools",
     "@types/node": "^26.1.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",

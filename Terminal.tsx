@@ -3,7 +3,6 @@ import { useTheme, type Theme } from './theme';
 import { Button } from './Button';
 
 export interface TermProps extends React.HTMLAttributes<HTMLElement> {
-  as?: React.ElementType;
   p?: keyof Theme['spacing'];
   controlscolor?: 'primary' | 'secondary' | 'surface' | 'surfaceSunken' | string;
   bgcolor?: 'primary' | 'secondary' | 'surface' | 'surfaceSunken' | string;
@@ -12,6 +11,7 @@ export interface TermProps extends React.HTMLAttributes<HTMLElement> {
   controls?: boolean;
   width?: number;
   height?: number;
+  token?: string;
 }
 
 const bgKeyMap: Record<string, keyof Theme['colors']> = {
@@ -158,6 +158,7 @@ export const Terminal: React.FC<TermProps> = ({
   children,
   width,
   height,
+  token,
   ...rest
 }) => {
   const theme = useTheme();
@@ -324,9 +325,7 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
 
   const ROWS = Math.floor((CONTAINER_HEIGHT - (controls ? 132 : 0) - PADDING) / CHARACTER_HEIGHT); 
 
-  const COLS = Math.floor((CONTAINER_WIDTH - PADDING) / CHARACTER_WIDTH) - 2; 
-
-  console.log(ROWS, COLS); 
+  const COLS = Math.floor((CONTAINER_WIDTH - PADDING) / CHARACTER_WIDTH); 
 
   const gridRef = useRef<Cell[][]>(
     Array.from({ length: ROWS }, () =>
@@ -350,6 +349,7 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
 
   const cursorRef = useRef({ x: 0, y: 0 });
   const currentStyleRef = useRef({ fg: '#ffffff', bg: '#0a0a0a', inverse: false });
+
 
   const [tick, setTick] = useState(0);
 
@@ -409,7 +409,7 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
 };
 
   const writeToTerminal = (rawData: string) => {
-    const data = rawData.replace(/(?<!\r)\n/g, "\r\n");
+    const data = rawData;
     
     const grid = gridRef.current;
     let { x, y } = cursorRef.current;
@@ -560,12 +560,9 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
               for (let col = 0; col <= Math.min(x, COLS - 1); col++) grid[y][col] = { char: ' ', fg: style.fg, bg: style.bg };
             } else if (mode === '2' || mode === '2J') {
               clearGrid();
-              scrollbackRef.current = [];
             } else if (mode === '3' || mode === '3J') {
-              clearGrid();
               scrollbackRef.current = [];
             }
-            console.log(mode);
           } else if (commandLetter === 'K') {
             const mode = sequence || '0';
             if (mode === '0' || mode === '0K') {
@@ -687,13 +684,19 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
   };
 
   useEffect(() => {
+    let disposed = false;
     let reconnectTimer: ReturnType<typeof setTimeout>;
     sessionIdRef.current = localStorage.getItem("terminal_session_id");
 
     const connect = () => {
+      if (disposed) return;
       setConnectionState("reconnecting");
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const ws = new WebSocket(`${protocol}//${window.location.host}/terminal-stream`);
+      const terminalUrl = `${protocol}//${window.location.host}/terminal-stream`;
+      const wsUrl = token
+        ? `${terminalUrl}?token=${encodeURIComponent(token)}`
+        : terminalUrl;
+      const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
@@ -720,18 +723,20 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
             } 
             else if (payload.type === "history" || payload.type === "recovery") {
               if (payload.type === "history") {
+                clearGrid(true);
+                const historyData = payload.history || payload.data || payload.logs || "";
+                if (historyData) {
+                  writeToTerminal(historyData);
+                }
+              }
+              if (payload.type === "history" && waitingRef.current.length != 0) {
                 for (const item of waitingRef.current)
                   ws.send(JSON.stringify({ type: "input", data: item }));
                 waitingRef.current = [];
               }
-              clearGrid(true);
-              const historyData = payload.history || payload.data || payload.logs || "";
-              if (historyData) {
-                writeToTerminal(historyData);
-              }
               processed = true;
             } else if (payload.type === "exit") {
-              const historyData = `\n\x1b[31mThe terminal exited.\x1b[33m\n\nCODE: ${payload.code}\nSIGNAL: ${payload.signal}\x1b[0m`;
+              const historyData = `\n\r\x1b[31mThe terminal exited.\x1b[33m\n\n\rCODE: ${payload.code}\n\rSIGNAL: ${payload.signal}\x1b[0m`;
               setRestartable(false);
               if (historyData) {
                 writeToTerminal(historyData);
@@ -757,6 +762,7 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
       };
 
       ws.onclose = () => {
+        if (disposed) return;
         setConnectionState("reconnecting");
         reconnectTimer = setTimeout(connect, 3000);
       };
@@ -769,10 +775,11 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
     connect();
 
     return () => {
+      disposed = true;
       clearTimeout(reconnectTimer);
       if (wsRef.current) wsRef.current.close();
     };
-  }, []);
+  }, [token]);
 
   const sendKeyStroke = (rawKey: string, isControlChar = false) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
@@ -1329,11 +1336,9 @@ if (bgColor) {
   }}
   onClick={async (e) => {
     e.stopPropagation();
-    console.log("test")
 
     const combined = [...scrollbackRef.current, ...gridRef.current];
 const textToCopy = getSelectedText(combined, selectionRef.current);
-    console.log(textToCopy)
     if (!textToCopy) return;
 
     try {
