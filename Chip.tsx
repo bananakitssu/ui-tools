@@ -31,37 +31,37 @@ export const Chip: React.FC<ChipProps> = ({ label, color, variant = 'filled', on
         fontWeight: theme.typography.weight.medium,
         cursor: onClick ? 'pointer' : 'default',
         userSelect: 'none',
-        ...style,
-      }}
-    >
+        ...style
+      }}>
+      
       {label}
-      {onDelete && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          aria-label={`Remove ${label}`}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            color: 'inherit',
-            opacity: 0.75,
-            fontSize: '12px',
-            padding: 0,
-            lineHeight: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '16px',
-            height: '16px',
-            borderRadius: '50%',
-          }}
-        >
+      {onDelete &&
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
+        aria-label={`Remove ${label}`}
+        style={{
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          color: 'inherit',
+          opacity: 0.75,
+          fontSize: '12px',
+          padding: 0,
+          lineHeight: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '16px',
+          height: '16px',
+          borderRadius: '50%'
+        }}>
+        
           ✕
         </button>
-      )}
-    </span>
-  );
+      }
+    </span>);
+
 };

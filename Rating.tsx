@@ -36,15 +36,15 @@ export const Rating: React.FC<RatingProps> = ({ value, onChange, max = 5, readOn
               color: filled ? theme.colors.accent : theme.colors.borderSubtle,
               lineHeight: 0,
               transition: 'color 0.1s ease, transform 0.1s ease',
-              transform: hoverValue === starValue ? 'scale(1.15)' : 'scale(1)',
-            }}
-          >
+              transform: hoverValue === starValue ? 'scale(1.15)' : 'scale(1)'
+            }}>
+            
             <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z" />
             </svg>
-          </button>
-        );
+          </button>);
+
       })}
-    </div>
-  );
+    </div>);
+
 };

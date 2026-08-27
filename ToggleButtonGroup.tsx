@@ -12,6 +12,7 @@ export interface ToggleButtonGroupProps {
   options: ToggleOption[];
   value: string | string[];
   onChange: (value: string | string[]) => void;
+
   multiple?: boolean;
   style?: React.CSSProperties;
 }
@@ -41,9 +42,9 @@ export const ToggleButtonGroup: React.FC<ToggleButtonGroupProps> = ({ options, v
         overflowX: 'auto',
         overflowY: 'hidden',
         WebkitOverflowScrolling: 'touch',
-        ...style,
-      }}
-    >
+        ...style
+      }}>
+      
       {options.map((opt, i) => {
         const isSelected = selectedValues.includes(opt.value);
         return (
@@ -52,6 +53,7 @@ export const ToggleButtonGroup: React.FC<ToggleButtonGroupProps> = ({ options, v
             disabled={opt.disabled}
             onClick={() => handleClick(opt.value, opt.disabled)}
             variant={isSelected ? 'primary' : 'secondary'}
+
             style={{
               flexShrink: 0,
               padding: '8px 16px',
@@ -64,13 +66,13 @@ export const ToggleButtonGroup: React.FC<ToggleButtonGroupProps> = ({ options, v
               fontSize: theme.typography.size.sm,
               fontWeight: isSelected ? theme.typography.weight.semibold : theme.typography.weight.regular,
               cursor: opt.disabled ? 'not-allowed' : 'pointer',
-              transition: 'background-color 0.15s ease, color 0.15s ease',
-            }}
-          >
+              transition: 'background-color 0.15s ease, color 0.15s ease'
+            }}>
+            
             {opt.label}
-          </Button>
-        );
+          </Button>);
+
       })}
-    </div>
-  );
+    </div>);
+
 };

@@ -3,6 +3,7 @@ import { useTheme } from './theme';
 
 export interface DividerProps extends React.HTMLAttributes<HTMLDivElement> {
   orientation?: 'horizontal' | 'vertical';
+
   children?: React.ReactNode;
 }
 
@@ -13,9 +14,9 @@ export const Divider: React.FC<DividerProps> = ({ orientation = 'horizontal', ch
     return (
       <div
         style={{ width: '1px', alignSelf: 'stretch', backgroundColor: theme.colors.borderSubtle, ...style }}
-        {...rest}
-      />
-    );
+        {...rest} />);
+
+
   }
 
   if (children) {
@@ -28,18 +29,18 @@ export const Divider: React.FC<DividerProps> = ({ orientation = 'horizontal', ch
           color: theme.colors.textMuted,
           fontSize: theme.typography.size.xs,
           fontFamily: theme.typography.body,
-          ...style,
+          ...style
         }}
-        {...rest}
-      >
+        {...rest}>
+        
         <span style={{ flex: 1, height: '1px', backgroundColor: theme.colors.borderSubtle }} />
         {children}
         <span style={{ flex: 1, height: '1px', backgroundColor: theme.colors.borderSubtle }} />
-      </div>
-    );
+      </div>);
+
   }
 
   return (
-    <div style={{ height: '1px', width: '100%', backgroundColor: theme.colors.borderSubtle, ...style }} {...rest} />
-  );
+    <div style={{ height: '1px', width: '100%', backgroundColor: theme.colors.borderSubtle, ...style }} {...rest} />);
+
 };

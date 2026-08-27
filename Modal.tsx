@@ -10,6 +10,8 @@ export interface ModalProps {
   style?: React.CSSProperties;
 }
 
+
+
 const ENTER_DURATION = 225;
 const EXIT_DURATION = 195;
 
@@ -18,7 +20,7 @@ export const Modal: React.FC<ModalProps> = ({
   onClose,
   title,
   children,
-  style,
+  style
 }) => {
   const theme = useTheme();
   const [isMounted, setIsMounted] = useState(false);
@@ -29,14 +31,20 @@ export const Modal: React.FC<ModalProps> = ({
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+
+
 
   useEffect(() => {
     if (isOpen) {
       setShouldRender(true);
       let raf2 = 0;
+
+
       const raf1 = requestAnimationFrame(() => {
         raf2 = requestAnimationFrame(() => setVisible(true));
       });
@@ -51,16 +59,21 @@ export const Modal: React.FC<ModalProps> = ({
     }
   }, [isOpen]);
 
+
   useEffect(() => {
     if (!shouldRender || !isMounted) return;
 
+
     previousActiveElement.current = document.activeElement as HTMLElement;
+
+
 
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
+
     const focusableSelector =
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
     const getFocusableElements = () => {
       if (!modalRef.current) return [];
@@ -69,12 +82,14 @@ export const Modal: React.FC<ModalProps> = ({
       );
     };
 
+
     const focusables = getFocusableElements();
     if (focusables.length > 0) {
       focusables[0].focus();
     } else {
       modalRef.current?.focus();
     }
+
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -90,11 +105,13 @@ export const Modal: React.FC<ModalProps> = ({
         const lastElement = currentFocusables[currentFocusables.length - 1];
 
         if (e.shiftKey) {
+
           if (document.activeElement === firstElement) {
             e.preventDefault();
             lastElement.focus();
           }
         } else {
+
           if (document.activeElement === lastElement) {
             e.preventDefault();
             firstElement.focus();
@@ -105,9 +122,11 @@ export const Modal: React.FC<ModalProps> = ({
 
     document.addEventListener('keydown', handleKeyDown);
 
+
     return () => {
       document.body.style.overflow = originalOverflow;
       document.removeEventListener('keydown', handleKeyDown);
+
 
       if (previousActiveElement.current) {
         previousActiveElement.current.focus();
@@ -115,7 +134,9 @@ export const Modal: React.FC<ModalProps> = ({
     };
   }, [shouldRender, isMounted]);
 
+
   if (!shouldRender || !isMounted) return null;
+
 
   return createPortal(
     <div
@@ -133,16 +154,17 @@ export const Modal: React.FC<ModalProps> = ({
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 9999,
-        padding: '16px',
-      }}
-    >
+        padding: '16px'
+      }}>
+      
+      {}
       <div
         ref={modalRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'modal-title' : undefined}
         tabIndex={-1}
-        onClick={(e) => e.stopPropagation()} 
+        onClick={(e) => e.stopPropagation()}
         style={{
           backgroundColor: theme.colors.surface,
           borderRadius: theme.radii.lg,
@@ -157,29 +179,31 @@ export const Modal: React.FC<ModalProps> = ({
           transform: visible ? 'scale(1)' : 'scale(0)',
           opacity: visible ? 1 : 0,
           transformOrigin: 'center',
-          transition: visible
-            ? `transform ${ENTER_DURATION}ms cubic-bezier(0.0, 0, 0.2, 1), opacity ${ENTER_DURATION}ms ease`
-            : `transform ${EXIT_DURATION}ms cubic-bezier(0.4, 0, 1, 1), opacity ${EXIT_DURATION}ms ease`,
-          ...style,
-        }}
-      >
+          transition: visible ?
+          `transform ${ENTER_DURATION}ms cubic-bezier(0.0, 0, 0.2, 1), opacity ${ENTER_DURATION}ms ease` :
+          `transform ${EXIT_DURATION}ms cubic-bezier(0.4, 0, 1, 1), opacity ${EXIT_DURATION}ms ease`,
+          ...style
+        }}>
+        
+        {}
+        {}
         <div
           style={{
             padding: '18px 22px',
             borderBottom: `1px solid ${theme.colors.borderSubtle}`,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          {title && (
-            <h3
-              id="modal-title"
-              style={{ margin: 0, fontSize: theme.typography.size.lg, fontWeight: theme.typography.weight.bold, fontFamily: theme.typography.display, color: theme.colors.ink }}
-            >
+            justifyContent: 'space-between'
+          }}>
+          
+          {title &&
+          <h3
+            id="modal-title"
+            style={{ margin: 0, fontSize: theme.typography.size.lg, fontWeight: theme.typography.weight.bold, fontFamily: theme.typography.display, color: theme.colors.ink }}>
+            
               {title}
             </h3>
-          )}
+          }
           <button
             onClick={onClose}
             aria-label="Close dialog"
@@ -191,13 +215,14 @@ export const Modal: React.FC<ModalProps> = ({
               color: theme.colors.textMuted,
               padding: '4px 8px',
               borderRadius: theme.radii.sm,
-              lineHeight: 1,
-            }}
-          >
+              lineHeight: 1
+            }}>
+            
             ✕
           </button>
         </div>
 
+        {}
         <div style={{ padding: '22px', color: theme.colors.ink, fontSize: theme.typography.size.base, lineHeight: 1.5 }}>
           {children}
         </div>

@@ -12,7 +12,7 @@ const bgKeyMap: Record<string, keyof Theme['colors']> = {
   primary: 'primary',
   secondary: 'accent',
   surface: 'surface',
-  surfaceSunken: 'surfaceSunken',
+  surfaceSunken: 'surfaceSunken'
 };
 
 export const Box: React.FC<BoxProps> = ({
@@ -31,12 +31,12 @@ export const Box: React.FC<BoxProps> = ({
   const combinedStyles: React.CSSProperties = {
     padding: paddingValue,
     backgroundColor: bgValue,
-    ...style,
+    ...style
   };
 
   return (
     <Tag style={combinedStyles} {...rest}>
       {children}
-    </Tag>
-  );
+    </Tag>);
+
 };

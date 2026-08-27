@@ -45,12 +45,12 @@ export const Tabs: React.FC<TabsProps> = ({ items, value, onChange, style }) => 
                 fontWeight: active ? theme.typography.weight.semibold : theme.typography.weight.medium,
                 color: item.disabled ? theme.colors.textDisabled : active ? theme.colors.primary : theme.colors.textMuted,
                 cursor: item.disabled ? 'not-allowed' : 'pointer',
-                transition: 'color 0.15s ease',
-              }}
-            >
+                transition: 'color 0.15s ease'
+              }}>
+              
               {item.label}
-            </button>
-          );
+            </button>);
+
         })}
       </div>
       <div
@@ -61,9 +61,9 @@ export const Tabs: React.FC<TabsProps> = ({ items, value, onChange, style }) => 
           backgroundColor: theme.colors.primary,
           left: `${indicator.left}px`,
           width: `${indicator.width}px`,
-          transition: 'left 0.2s cubic-bezier(0.4, 0, 0.2, 1), width 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-        }}
-      />
-    </div>
-  );
+          transition: 'left 0.2s cubic-bezier(0.4, 0, 0.2, 1), width 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+        }} />
+      
+    </div>);
+
 };

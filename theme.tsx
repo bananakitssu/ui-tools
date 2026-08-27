@@ -1,5 +1,9 @@
 import React, { createContext, useContext, useMemo } from 'react';
 
+
+
+
+
 export const defaultTheme = {
   colors: {
     primary: '#4F46E5',
@@ -28,7 +32,7 @@ export const defaultTheme = {
     surfaceSunken: '#FAFAFA',
 
     focusRing: 'rgba(79, 70, 229, 0.28)',
-    focusRingSoft: 'rgba(79, 70, 229, 0.16)',
+    focusRingSoft: 'rgba(79, 70, 229, 0.16)'
   },
 
   spacing: {
@@ -37,7 +41,7 @@ export const defaultTheme = {
     md: '16px',
     lg: '24px',
     xl: '32px',
-    xxl: '48px',
+    xxl: '48px'
   },
 
   radii: {
@@ -45,15 +49,17 @@ export const defaultTheme = {
     md: '6px',
     lg: '8px',
     xl: '8px',
-    pill: '999px',
+    pill: '999px'
   },
+
+
 
   shadow: {
     sm: '0px 2px 1px -1px rgba(0,0,0,0.08), 0px 1px 1px 0px rgba(0,0,0,0.06), 0px 1px 3px 0px rgba(0,0,0,0.05)',
     card: '0px 1px 1px -1px rgba(0,0,0,0.06), 0px 1px 1px 0px rgba(0,0,0,0.05), 0px 1px 3px 0px rgba(0,0,0,0.06)',
     modal: '0px 11px 15px -7px rgba(0,0,0,0.10), 0px 24px 38px 3px rgba(0,0,0,0.08), 0px 9px 46px 8px rgba(0,0,0,0.07)',
     dropdown: '0px 5px 5px -3px rgba(0,0,0,0.08), 0px 8px 10px 1px rgba(0,0,0,0.06), 0px 3px 14px 2px rgba(0,0,0,0.05)',
-    toast: '0px 3px 5px -1px rgba(0,0,0,0.10), 0px 6px 10px 0px rgba(0,0,0,0.07), 0px 1px 18px 0px rgba(0,0,0,0.06)',
+    toast: '0px 3px 5px -1px rgba(0,0,0,0.10), 0px 6px 10px 0px rgba(0,0,0,0.07), 0px 1px 18px 0px rgba(0,0,0,0.06)'
   },
 
   typography: {
@@ -67,15 +73,15 @@ export const defaultTheme = {
       lg: '17px',
       xl: '20px',
       '2xl': '24px',
-      '3xl': '32px',
+      '3xl': '32px'
     },
     weight: {
       regular: 400,
       medium: 500,
       semibold: 600,
-      bold: 700,
-    },
-  },
+      bold: 700
+    }
+  }
 } as const;
 
 export type Theme = typeof defaultTheme;
@@ -102,9 +108,13 @@ export interface ThemeProviderProps {
   children: React.ReactNode;
 }
 
+
+
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ theme, children }) => {
   const merged = useMemo(() => deepMerge(defaultTheme, theme), [theme]);
   return <ThemeContext.Provider value={merged}>{children}</ThemeContext.Provider>;
 };
+
+
 
 export const useTheme = (): Theme => useContext(ThemeContext);

@@ -15,6 +15,7 @@ export interface BottomNavigationProps {
   style?: React.CSSProperties;
 }
 
+
 export const BottomNavigation: React.FC<BottomNavigationProps> = ({ items, value, onChange, style }) => {
   const theme = useTheme();
 
@@ -30,9 +31,9 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ items, value
         borderTop: `1px solid ${theme.colors.borderSubtle}`,
         boxShadow: theme.shadow.card,
         zIndex: 1000,
-        ...style,
-      }}
-    >
+        ...style
+      }}>
+      
       {items.map((item) => {
         const active = item.value === value;
         return (
@@ -53,16 +54,16 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ items, value
               cursor: 'pointer',
               color: active ? theme.colors.primary : theme.colors.textMuted,
               fontFamily: theme.typography.body,
-              transition: 'color 0.15s ease',
-            }}
-          >
+              transition: 'color 0.15s ease'
+            }}>
+            
             {item.icon && <div style={{ fontSize: '20px', lineHeight: 1 }}>{item.icon}</div>}
             <span style={{ fontSize: theme.typography.size.xs, fontWeight: active ? theme.typography.weight.semibold : theme.typography.weight.regular }}>
               {item.label}
             </span>
-          </Button>
-        );
+          </Button>);
+
       })}
-    </div>
-  );
+    </div>);
+
 };

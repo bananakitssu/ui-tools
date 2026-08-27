@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 
-export default function Video({url}: {url: string}) {
+export default function Video({ url }: {url: string;}) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  
+
   return (
     <div id="video-container" style={{
       background: "black",
@@ -16,6 +16,6 @@ export default function Video({url}: {url: string}) {
         height: "100%",
         borderRadius: "20px"
       }} key={url} controls ref={videoRef} />
-    </div>
-  )
+    </div>);
+
 }

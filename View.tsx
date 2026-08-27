@@ -10,6 +10,7 @@ export interface ViewProps extends React.HTMLAttributes<HTMLDivElement> {
   align?: ViewAlign;
   justify?: ViewJustify;
   wrap?: boolean;
+
   gap?: string | number;
   flex?: string | number;
   children?: React.ReactNode;
@@ -20,7 +21,7 @@ const alignMap: Record<ViewAlign, string> = {
   center: 'center',
   end: 'flex-end',
   stretch: 'stretch',
-  baseline: 'baseline',
+  baseline: 'baseline'
 };
 
 const justifyMap: Record<ViewJustify, string> = {
@@ -29,8 +30,12 @@ const justifyMap: Record<ViewJustify, string> = {
   end: 'flex-end',
   'space-between': 'space-between',
   'space-around': 'space-around',
-  'space-evenly': 'space-evenly',
+  'space-evenly': 'space-evenly'
 };
+
+
+
+
 
 export const View: React.FC<ViewProps> = ({
   as: Tag = 'div',
@@ -54,11 +59,11 @@ export const View: React.FC<ViewProps> = ({
         flexWrap: wrap ? 'wrap' : 'nowrap',
         gap: typeof gap === 'number' ? `${gap}px` : gap,
         flex,
-        ...style,
+        ...style
       }}
-      {...rest}
-    >
+      {...rest}>
+      
       {children}
-    </Tag>
-  );
+    </Tag>);
+
 };

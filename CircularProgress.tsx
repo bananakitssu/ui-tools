@@ -2,10 +2,15 @@ import React from 'react';
 import { useTheme } from './theme';
 
 export interface CircularProgressProps {
+
   value?: number;
+
   size?: number;
+
   strokeWidth?: number;
+
   color?: string;
+
   trackColor?: string;
   style?: React.CSSProperties;
 }
@@ -16,19 +21,21 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
   strokeWidth = 4,
   color,
   trackColor,
-  style,
+  style
 }) => {
   const theme = useTheme();
   const resolvedColor = color || theme.colors.primary;
   const resolvedTrackColor = trackColor || theme.colors.primaryLight;
   const isIndeterminate = value === undefined;
 
+
   const center = size / 2;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
 
+
   const clampedValue = Math.min(100, Math.max(0, value ?? 0));
-  const strokeDashoffset = circumference - (clampedValue / 100) * circumference;
+  const strokeDashoffset = circumference - clampedValue / 100 * circumference;
 
   return (
     <div
@@ -39,18 +46,20 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
         position: 'relative',
         width: `${size}px`,
         height: `${size}px`,
-        ...style,
-      }}
-    >
+        ...style
+      }}>
+      
       <svg
         width={size}
         height={size}
         viewBox={`0 0 ${size} ${size}`}
         style={{
+
           transform: isIndeterminate ? 'none' : 'rotate(-90deg)',
-          animation: isIndeterminate ? 'spin 1.2s linear infinite' : 'none',
-        }}
-      >
+          animation: isIndeterminate ? 'spin 1.2s linear infinite' : 'none'
+        }}>
+        
+        {}
         <style>{`
           @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -58,15 +67,17 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
           }
         `}</style>
 
+        {}
         <circle
           cx={center}
           cy={center}
           r={radius}
           fill="none"
           stroke={resolvedTrackColor}
-          strokeWidth={strokeWidth}
-        />
+          strokeWidth={strokeWidth} />
+        
 
+        {}
         <circle
           cx={center}
           cy={center}
@@ -78,10 +89,10 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
           strokeDashoffset={isIndeterminate ? circumference * 0.25 : strokeDashoffset}
           strokeLinecap="round"
           style={{
-            transition: isIndeterminate ? 'none' : 'stroke-dashoffset 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
-          }}
-        />
+            transition: isIndeterminate ? 'none' : 'stroke-dashoffset 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+          }} />
+        
       </svg>
-    </div>
-  );
+    </div>);
+
 };

@@ -9,6 +9,7 @@ export interface SliderProps {
   step?: number;
   disabled?: boolean;
   onChange?: (value: number) => void;
+
   showValue?: boolean;
   style?: React.CSSProperties;
 }
@@ -22,14 +23,14 @@ export const Slider: React.FC<SliderProps> = ({
   disabled = false,
   onChange,
   showValue = false,
-  style,
+  style
 }) => {
   const theme = useTheme();
   const [internalValue, setInternalValue] = useState(value ?? min);
   const currentValue = value !== undefined ? value : internalValue;
   const uid = useId().replace(/[:]/g, '');
   const cls = `ui-slider-${uid}`;
-  const percent = ((currentValue - min) / (max - min)) * 100;
+  const percent = (currentValue - min) / (max - min) * 100;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = Number(e.target.value);
@@ -41,16 +42,16 @@ export const Slider: React.FC<SliderProps> = ({
 
   return (
     <div style={{ width: '100%', maxWidth: '300px', fontFamily: theme.typography.body, ...style }}>
-      {(label || showValue) && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-          {label && (
-            <label htmlFor={uid} style={{ fontSize: theme.typography.size.sm, fontWeight: theme.typography.weight.medium, color: theme.colors.ink }}>
+      {(label || showValue) &&
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+          {label &&
+        <label htmlFor={uid} style={{ fontSize: theme.typography.size.sm, fontWeight: theme.typography.weight.medium, color: theme.colors.ink }}>
               {label}
             </label>
-          )}
+        }
           {showValue && <span style={{ fontSize: theme.typography.size.sm, color: theme.colors.textMuted }}>{currentValue}</span>}
         </div>
-      )}
+      }
 
       <div style={{ position: 'relative', height: '20px', display: 'flex', alignItems: 'center' }}>
         <div style={{ position: 'absolute', left: 0, right: 0, height: '4px', borderRadius: '2px', backgroundColor: theme.colors.borderSubtle }} />
@@ -75,9 +76,9 @@ export const Slider: React.FC<SliderProps> = ({
             cursor: disabled ? 'not-allowed' : 'pointer',
             WebkitAppearance: 'none',
             appearance: 'none',
-            outline: 'none',
-          }}
-        />
+            outline: 'none'
+          }} />
+        
       </div>
 
       <style>{`
@@ -105,6 +106,6 @@ export const Slider: React.FC<SliderProps> = ({
         .${cls}:active::-webkit-slider-thumb { box-shadow: 0 0 0 10px ${theme.colors.focusRing}; }
         .${cls}:active::-moz-range-thumb { box-shadow: 0 0 0 10px ${theme.colors.focusRing}; }
       `}</style>
-    </div>
-  );
+    </div>);
+
 };

@@ -18,7 +18,7 @@ const bgKeyMap: Record<string, keyof Theme['colors']> = {
   primary: 'primary',
   secondary: 'accent',
   surface: 'surface',
-  surfaceSunken: 'surfaceSunken',
+  surfaceSunken: 'surfaceSunken'
 };
 
 interface Point {
@@ -32,57 +32,68 @@ interface SelectionState {
   isSelecting: boolean;
 }
 
+const encodeToken = (token: string): string => {
+  const bytes = new TextEncoder().encode(token);
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).
+  replace(/\+/g, "-").
+  replace(/\//g, "_").
+  replace(/=+$/, "");
+};
+
+
 const ANSI_COLORS: Record<string, string> = {
   "30": "#000000", "31": "#cd0000", "32": "#00cd00", "33": "#cdcd00",
   "34": "#0000ee", "35": "#cd00cd", "36": "#00cdcd", "37": "#e5e5e5",
   "90": "#7f7f7f", "91": "#ff0000", "92": "#00ff00", "93": "#ffff00",
-  "94": "#5c5cff", "95": "#ff00ff", "96": "#00ffff", "97": "#ffffff",
+  "94": "#5c5cff", "95": "#ff00ff", "96": "#00ffff", "97": "#ffffff"
 };
 
 const ANSI_BG_COLORS: Record<string, string> = {
   "40": "#000000", "41": "#cd0000", "42": "#00cd00", "43": "#cdcd00",
   "44": "#0000ee", "45": "#cd00cd", "46": "#00cdcd", "47": "#e5e5e5",
   "100": "#7f7f7f", "101": "#ff0000", "102": "#00ff00", "103": "#ffff00",
-  "104": "#5c5cff", "105": "#ff00ff", "106": "#00ffff", "107": "#ffffff",
+  "104": "#5c5cff", "105": "#ff00ff", "106": "#00ffff", "107": "#ffffff"
 };
 
 const get256Color = (index: number): string => {
   if (index < 8) return ANSI_COLORS[String(index + 30)] || "#000000";
   if (index < 16) return ANSI_COLORS[String(index - 8 + 90)] || "#ffffff";
-  
+
   if (index >= 16 && index <= 231) {
     const r = Math.floor((index - 16) / 36);
-    const g = Math.floor(((index - 16) % 36) / 6);
+    const g = Math.floor((index - 16) % 36 / 6);
     const b = (index - 16) % 6;
     const rHex = Math.round(r * 51).toString(16).padStart(2, '0');
     const gHex = Math.round(g * 51).toString(16).padStart(2, '0');
     const bHex = Math.round(b * 51).toString(16).padStart(2, '0');
     return `#${rHex}${gHex}${bHex}`;
   }
-  
+
   const grayVal = Math.round((index - 232) * 10 + 8).toString(16).padStart(2, '0');
   return `#${grayVal}${grayVal}${grayVal}`;
 };
 
 const getCtrlChar = (key: string): string | null => {
   const lower = key.toLowerCase();
-  
+
   if (lower >= 'a' && lower <= 'z') {
     return String.fromCharCode(lower.charCodeAt(0) - 96);
   }
-  
+
   switch (lower) {
-    case '@': case ' ': return '\x00';
-    case '[': return '\x1b';
-    case '\\': return '\x1c';
-    case ']': return '\x1d';
-    case '^': return '\x1e';
-    case '_': return '\x1f';
-    case '?': return '\x7f';
-    case 'm': return '\r';
-    case 'j': return '\n';
-    case 'i': return '\t';
-    default: return null;
+    case '@':case ' ':return '\x00';
+    case '[':return '\x1b';
+    case '\\':return '\x1c';
+    case ']':return '\x1d';
+    case '^':return '\x1e';
+    case '_':return '\x1f';
+    case '?':return '\x7f';
+    case 'm':return '\r';
+    case 'j':return '\n';
+    case 'i':return '\t';
+    default:return null;
   }
 };
 
@@ -92,12 +103,14 @@ interface Cell {
   bg: string;
 }
 
+
 interface RepeatingButtonProps {
   style: React.CSSProperties;
   onAction: (e?: React.PointerEvent<HTMLButtonElement>) => void;
   onFocus: () => void;
   children: React.ReactNode;
 }
+
 
 const RepeatingButton = ({ style, onAction, onFocus, children }: RepeatingButtonProps) => {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -106,11 +119,12 @@ const RepeatingButton = ({ style, onAction, onFocus, children }: RepeatingButton
   const startRepeat = (e: React.PointerEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     onAction(e);
     onFocus();
 
     stopRepeat();
+
 
     timeoutRef.current = setTimeout(() => {
       intervalRef.current = setInterval(() => {
@@ -141,11 +155,11 @@ const RepeatingButton = ({ style, onAction, onFocus, children }: RepeatingButton
       onPointerDown={startRepeat}
       onPointerUp={stopRepeat}
       onPointerLeave={stopRepeat}
-      onPointerCancel={stopRepeat}
-    >
+      onPointerCancel={stopRepeat}>
+      
       {children}
-    </Button>
-  );
+    </Button>);
+
 };
 
 export const Terminal: React.FC<TermProps> = ({
@@ -172,80 +186,99 @@ export const Terminal: React.FC<TermProps> = ({
   const [restartable, setRestartable] = useState(true);
   const waitingRef = useRef<string[]>([]);
   const getGridPosFromPointer = (e: React.PointerEvent | MouseEvent) => {
-  if (!canvasRef.current) return null;
-  const rect = canvasRef.current.getBoundingClientRect();
+    if (!canvasRef.current) return null;
+    const rect = canvasRef.current.getBoundingClientRect();
 
-  const px = e.clientX - rect.left - PADDING;
-  const py = e.clientY - rect.top - PADDING;
 
-  const col = Math.floor(px / CHARACTER_WIDTH);
-  const row = Math.floor(py / CHARACTER_HEIGHT);
+    const px = e.clientX - rect.left - PADDING;
+    const py = e.clientY - rect.top - PADDING;
 
-  const clampedX = Math.max(0, Math.min(COLS - 1, col));
-  const clampedY = Math.max(0, Math.min(ROWS - 1, row));
 
-  const totalLines = scrollbackRef.current.length + gridRef.current.length;
-  const startIndex = totalLines - ROWS - scrollOffsetRef.current;
-  const lineIndex = startIndex + clampedY;
+    const col = Math.floor(px / CHARACTER_WIDTH);
+    const row = Math.floor(py / CHARACTER_HEIGHT);
 
-  return { x: clampedX, lineIndex };
-};
+    const clampedX = Math.max(0, Math.min(COLS - 1, col));
+    const clampedY = Math.max(0, Math.min(ROWS - 1, row));
+
+
+    const totalLines = scrollbackRef.current.length + gridRef.current.length;
+    const startIndex = totalLines - ROWS - scrollOffsetRef.current;
+    const lineIndex = startIndex + clampedY;
+
+    return { x: clampedX, lineIndex };
+  };
   const getSelectedText = (combinedBuffer: Cell[][], sel: SelectionState): string => {
-  if (!sel.start || !sel.end) return "";
+    if (!sel.start || !sel.end) return "";
 
-  let start = sel.start;
-  let end = sel.end;
+    let start = sel.start;
+    let end = sel.end;
 
-  if (
+
+    if (
     start.lineIndex > end.lineIndex ||
-    (start.lineIndex === end.lineIndex && start.x > end.x)
-  ) {
-    [start, end] = [end, start];
-  }
+    start.lineIndex === end.lineIndex && start.x > end.x)
+    {
+      [start, end] = [end, start];
+    }
 
-  let result = "";
+    let result = "";
 
-  for (let r = start.lineIndex; r <= end.lineIndex; r++) {
-    const row = combinedBuffer[r];
-    if (!row) continue;
+    for (let r = start.lineIndex; r <= end.lineIndex; r++) {
+      const row = combinedBuffer[r];
+      if (!row) continue;
 
-    const isStartRow = r === start.lineIndex;
-    const isEndRow = r === end.lineIndex;
+      const isStartRow = r === start.lineIndex;
+      const isEndRow = r === end.lineIndex;
 
-    const startX = isStartRow ? start.x : 0;
-    const endX = isEndRow ? end.x : COLS - 1;
+      const startX = isStartRow ? start.x : 0;
+      const endX = isEndRow ? end.x : COLS - 1;
 
-    const rowSlice = row.slice(startX, endX + 1);
-    const lineText = rowSlice.map((cell) => cell?.char ?? " ").join("");
 
-    const isFullRow = endX === COLS - 1;
-    const lastCellChar = row[COLS - 1]?.char ?? " ";
-    const isSoftWrapped = !isEndRow && isFullRow && lastCellChar !== " ";
+      const rowSlice = row.slice(startX, endX + 1);
+      const lineText = rowSlice.map((cell) => cell?.char ?? " ").join("");
 
-    if (isSoftWrapped) {
-      result += lineText;
-    } else {
-      result += lineText.trimEnd();
-      if (!isEndRow) {
-        result += "\n";
+
+
+
+
+      const isFullRow = endX === COLS - 1;
+      const lastCellChar = row[COLS - 1]?.char ?? " ";
+      const isSoftWrapped = !isEndRow && isFullRow && lastCellChar !== " ";
+
+      if (isSoftWrapped) {
+
+        result += lineText;
+      } else {
+
+        result += lineText.trimEnd();
+        if (!isEndRow) {
+          result += "\n";
+        }
       }
     }
-  }
 
-  return result;
-};
-
-  const combinedStyles: React.CSSProperties = {
-    padding: paddingValue,
-    ...style,
+    return result;
   };
 
 
-  
+  const combinedStyles: React.CSSProperties = {
+    padding: paddingValue,
+    ...style
+  };
+
+
+
+
+
+
+
+
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
+
 
   const [inputValue, setInputValue] = useState(' ');
 
@@ -275,61 +308,65 @@ export const Terminal: React.FC<TermProps> = ({
     setShiftPressedState(val);
   };
   const selectionRef = useRef<SelectionState>({
-  start: null,
-  end: null,
-  isSelecting: false,
-});
+    start: null,
+    end: null,
+    isSelecting: false
+  });
   const isCellSelected = (x: number, lineIndex: number): boolean => {
-  const sel = selectionRef.current;
-  if (!sel.start || !sel.end) return false;
+    const sel = selectionRef.current;
+    if (!sel.start || !sel.end) return false;
 
-  let start = sel.start;
-  let end = sel.end;
+    let start = sel.start;
+    let end = sel.end;
 
-  if (
+    if (
     start.lineIndex > end.lineIndex ||
-    (start.lineIndex === end.lineIndex && start.x > end.x)
-  ) {
-    [start, end] = [end, start];
-  }
+    start.lineIndex === end.lineIndex && start.x > end.x)
+    {
+      [start, end] = [end, start];
+    }
 
-  if (lineIndex < start.lineIndex || lineIndex > end.lineIndex) return false;
-  if (start.lineIndex === end.lineIndex) {
-    return x >= start.x && x <= end.x;
-  }
-  if (lineIndex === start.lineIndex) return x >= start.x;
-  if (lineIndex === end.lineIndex) return x <= end.x;
+    if (lineIndex < start.lineIndex || lineIndex > end.lineIndex) return false;
+    if (start.lineIndex === end.lineIndex) {
+      return x >= start.x && x <= end.x;
+    }
+    if (lineIndex === start.lineIndex) return x >= start.x;
+    if (lineIndex === end.lineIndex) return x <= end.x;
 
-  return true;
-};
-const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
-const mouseStateRef = useRef<{
-  isDown: boolean;
-  startCoords: Point | null;
-  startPos: { x: number; y: number } | null;
-}>({ isDown: false, startCoords: null, startPos: null });
+    return true;
+  };
+  const touchStartPosRef = useRef<{x: number;y: number;} | null>(null);
 
-const touchStateRef = useRef<{
-  startPos: { x: number; y: number } | null;
-  lastPosY: number | null;
-  isLongPress: boolean;
-}>({ startPos: null, lastPosY: null, isLongPress: false });
+  const mouseStateRef = useRef<{
+    isDown: boolean;
+    startCoords: Point | null;
+    startPos: {x: number;y: number;} | null;
+  }>({ isDown: false, startCoords: null, startPos: null });
 
-const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
+
+  const touchStateRef = useRef<{
+    startPos: {x: number;y: number;} | null;
+    lastPosY: number | null;
+    isLongPress: boolean;
+  }>({ startPos: null, lastPosY: null, isLongPress: false });
+
+  const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
 
   const PADDING = 8;
-  const CHARACTER_WIDTH = 9.6; 
-  const CHARACTER_HEIGHT = 18;  
-  const CONTAINER_WIDTH = width ?? 295; 
-  const CONTAINER_HEIGHT = height ?? 380; 
+  const CHARACTER_WIDTH = 9.6;
+  const CHARACTER_HEIGHT = 18;
+  const CONTAINER_WIDTH = width ?? 295;
+  const CONTAINER_HEIGHT = height ?? 380;
 
-  const ROWS = Math.floor((CONTAINER_HEIGHT - (controls ? 132 : 0) - PADDING) / CHARACTER_HEIGHT); 
 
-  const COLS = Math.floor((CONTAINER_WIDTH - PADDING) / CHARACTER_WIDTH); 
+  const ROWS = Math.floor((CONTAINER_HEIGHT - (controls ? 132 : 0) - PADDING) / CHARACTER_HEIGHT);
+
+
+  const COLS = Math.floor((CONTAINER_WIDTH - PADDING) / CHARACTER_WIDTH);
 
   const gridRef = useRef<Cell[][]>(
     Array.from({ length: ROWS }, () =>
-      Array.from({ length: COLS }, () => ({ char: ' ', fg: '#ffffff', bg: '#0a0a0a' }))
+    Array.from({ length: COLS }, () => ({ char: ' ', fg: '#ffffff', bg: '#0a0a0a' }))
     )
   );
 
@@ -345,43 +382,60 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
   const touchAccumulatedRef = useRef(0);
 
   const scrollbackRef = useRef<Cell[][]>([]);
-  const scrollOffsetRef = useRef(0); 
+  const scrollOffsetRef = useRef(0);
 
   const cursorRef = useRef({ x: 0, y: 0 });
   const currentStyleRef = useRef({ fg: '#ffffff', bg: '#0a0a0a', inverse: false });
+
+
+
+
 
 
   const [tick, setTick] = useState(0);
 
   const getGridCoords = (
   e: MouseEvent | Touch,
-  canvas: HTMLCanvasElement
-): Point => {
-  const rect = canvas.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left - PADDING;
-  const mouseY = e.clientY - rect.top - PADDING;
+  canvas: HTMLCanvasElement)
+  : Point => {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left - PADDING;
+    const mouseY = e.clientY - rect.top - PADDING;
 
-  const visualY = Math.max(0, Math.min(ROWS - 1, Math.floor(mouseY / CHARACTER_HEIGHT)));
-  const x = Math.max(0, Math.min(COLS - 1, Math.floor(mouseX / CHARACTER_WIDTH)));
+    const visualY = Math.max(0, Math.min(ROWS - 1, Math.floor(mouseY / CHARACTER_HEIGHT)));
+    const x = Math.max(0, Math.min(COLS - 1, Math.floor(mouseX / CHARACTER_WIDTH)));
 
-  const scrollOffset = scrollOffsetRef.current;
-  const combined = [...scrollbackRef.current, ...gridRef.current];
-  const totalLines = combined.length;
-  const startIndex = totalLines - ROWS - scrollOffset;
-  const lineIndex = startIndex + visualY;
+    const scrollOffset = scrollOffsetRef.current;
+    const combined = [...scrollbackRef.current, ...gridRef.current];
+    const totalLines = combined.length;
+    const startIndex = totalLines - ROWS - scrollOffset;
+    const lineIndex = startIndex + visualY;
 
-  return { x, lineIndex };
-};
+    return { x, lineIndex };
+  };
 
   useEffect(() => {
     set_y_(cursorRef.current?.y ?? 0);
-  }, [tick])
+  }, [tick]);
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
   const clearGrid = (clearHistory = false) => {
     gridRef.current = Array.from({ length: ROWS }, () =>
-      Array.from({ length: COLS }, () => ({ char: ' ', fg: '#ffffff', bg: '#0a0a0a' }))
+    Array.from({ length: COLS }, () => ({ char: ' ', fg: '#ffffff', bg: '#0a0a0a' }))
     );
     cursorRef.current = { x: 0, y: 0 };
     if (clearHistory) {
@@ -391,26 +445,28 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
   };
 
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-  e.preventDefault();
-  
-  const pastedText = e.clipboardData.getData("text");
-  if (!pastedText) return;
+    e.preventDefault();
 
-  const formattedText = pastedText.replace(/\r?\n/g, "\r\n");
+    const pastedText = e.clipboardData.getData("text");
+    if (!pastedText) return;
 
-  if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-    wsRef.current.send(
-      JSON.stringify({
-        type: "input",
-        data: formattedText,
-      })
-    );
-  }
-};
+
+    const formattedText = pastedText.replace(/\r?\n/g, "\r\n");
+
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(
+        JSON.stringify({
+          type: "input",
+          data: formattedText
+        })
+      );
+    }
+  };
 
   const writeToTerminal = (rawData: string) => {
+
     const data = rawData;
-    
+
     const grid = gridRef.current;
     let { x, y } = cursorRef.current;
     let style = currentStyleRef.current;
@@ -420,14 +476,14 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
       const bottom = scrollBottomRef.current;
       for (let step = 0; step < amount; step++) {
         if (!isAltScreenRef.current && top === 0 && bottom === ROWS - 1) {
-          scrollbackRef.current.push(grid[0].map(cell => ({ ...cell })));
+          scrollbackRef.current.push(grid[0].map((cell) => ({ ...cell })));
           if (scrollbackRef.current.length > 1000) {
             scrollbackRef.current.shift();
           }
         }
 
         for (let r = top; r < bottom; r++) {
-          grid[r] = grid[r + 1].map(cell => ({ ...cell }));
+          grid[r] = grid[r + 1].map((cell) => ({ ...cell }));
         }
         grid[bottom] = Array.from({ length: COLS }, () => ({ char: ' ', fg: '#ffffff', bg: '#0a0a0a' }));
       }
@@ -438,7 +494,7 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
       const bottom = scrollBottomRef.current;
       for (let step = 0; step < amount; step++) {
         for (let r = bottom; r > top; r--) {
-          grid[r] = grid[r - 1].map(cell => ({ ...cell }));
+          grid[r] = grid[r - 1].map((cell) => ({ ...cell }));
         }
         grid[top] = Array.from({ length: COLS }, () => ({ char: ' ', fg: '#ffffff', bg: '#0a0a0a' }));
       }
@@ -465,7 +521,7 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
         i++;
       } else if (char === '\x1b') {
         const nextChar = data[i + 1];
-        
+
         if (nextChar === '[') {
           let seqEnd = i + 2;
           while (seqEnd < data.length && !/[a-zA-Z]/.test(data[seqEnd])) {
@@ -489,8 +545,8 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
                 style.fg = '#ffffff';
               } else if (p === '49') {
                 style.bg = '#0a0a0a';
-              } 
-              else if (p === '38' && params[idx + 1] === '5') {
+              } else
+              if (p === '38' && params[idx + 1] === '5') {
                 const colorIdx = parseInt(params[idx + 2], 10);
                 if (!isNaN(colorIdx)) style.fg = get256Color(colorIdx);
                 idx += 2;
@@ -498,8 +554,8 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
                 const colorIdx = parseInt(params[idx + 2], 10);
                 if (!isNaN(colorIdx)) style.bg = get256Color(colorIdx);
                 idx += 2;
-              }
-              else if (p === '38' && params[idx + 1] === '2') {
+              } else
+              if (p === '38' && params[idx + 1] === '2') {
                 const r = parseInt(params[idx + 2], 10);
                 const g = parseInt(params[idx + 3], 10);
                 const b = parseInt(params[idx + 4], 10);
@@ -511,8 +567,8 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
                 const b = parseInt(params[idx + 4], 10);
                 if (!isNaN(r) && !isNaN(g) && !isNaN(b)) style.bg = `rgb(${r},${g},${b})`;
                 idx += 4;
-              }
-              else if (ANSI_COLORS[p]) {
+              } else
+              if (ANSI_COLORS[p]) {
                 style.fg = ANSI_COLORS[p];
               } else if (ANSI_BG_COLORS[p]) {
                 style.bg = ANSI_BG_COLORS[p];
@@ -559,7 +615,18 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
               }
               for (let col = 0; col <= Math.min(x, COLS - 1); col++) grid[y][col] = { char: ' ', fg: style.fg, bg: style.bg };
             } else if (mode === '2' || mode === '2J') {
-              clearGrid();
+
+
+
+              for (let r = 0; r < ROWS; r++) {
+                for (let col = 0; col < COLS; col++) {
+                  grid[r][col] = {
+                    char: ' ',
+                    fg: style.fg,
+                    bg: style.bg
+                  };
+                }
+              }
             } else if (mode === '3' || mode === '3J') {
               scrollbackRef.current = [];
             }
@@ -585,7 +652,7 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
             for (let step = 0; step < amount; step++) {
               if (top <= bottom) {
                 for (let r = bottom; r > top; r--) {
-                  grid[r] = grid[r - 1].map(cell => ({ ...cell }));
+                  grid[r] = grid[r - 1].map((cell) => ({ ...cell }));
                 }
                 grid[top] = Array.from({ length: COLS }, () => ({ char: ' ', fg: '#ffffff', bg: '#0a0a0a' }));
               }
@@ -597,7 +664,7 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
             for (let step = 0; step < amount; step++) {
               if (top <= bottom) {
                 for (let r = top; r < bottom; r++) {
-                  grid[r] = grid[r + 1].map(cell => ({ ...cell }));
+                  grid[r] = grid[r + 1].map((cell) => ({ ...cell }));
                 }
                 grid[bottom] = Array.from({ length: COLS }, () => ({ char: ' ', fg: '#ffffff', bg: '#0a0a0a' }));
               }
@@ -611,7 +678,7 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
           } else if (commandLetter === 'h') {
             if (sequence === '?1049' || sequence === '?47' || sequence === '?1047') {
               if (!isAltScreenRef.current) {
-                mainGridRef.current = gridRef.current.map(row => row.map(cell => ({ ...cell })));
+                mainGridRef.current = gridRef.current.map((row) => row.map((cell) => ({ ...cell })));
                 mainCursorRef.current = { ...cursorRef.current };
                 clearGrid();
                 isAltScreenRef.current = true;
@@ -634,7 +701,7 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
             }
           }
         } else if (nextChar === '(' || nextChar === ')') {
-          i += 3; 
+          i += 3;
         } else if (nextChar === '7') {
           savedCursorRef.current = { x, y };
           i += 2;
@@ -679,7 +746,7 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
     }
 
     cursorRef.current = { x, y };
-    setTick(t => t + 1);
+    setTick((t) => t + 1);
     currentStyleRef.current = style;
   };
 
@@ -693,20 +760,20 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
       setConnectionState("reconnecting");
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const terminalUrl = `${protocol}//${window.location.host}/terminal-stream`;
-      const wsUrl = token
-        ? `${terminalUrl}?token=${encodeURIComponent(token)}`
-        : terminalUrl;
-      const ws = new WebSocket(wsUrl);
+      const authProtocols = token ?
+      ["terminal-auth", `terminal-token.${encodeToken(token)}`] :
+      [];
+      const ws = new WebSocket(terminalUrl, authProtocols);
       wsRef.current = ws;
 
       ws.onopen = () => {
         setConnectionState("connected");
         ws.send(JSON.stringify({
           type: "init",
-          data: { 
+          data: {
             sessionId: sessionIdRef.current,
-            cols: COLS, 
-            rows: ROWS 
+            cols: COLS,
+            rows: ROWS
           }
         }));
       };
@@ -720,18 +787,59 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
               sessionIdRef.current = payload.sessionId;
               localStorage.setItem("terminal_session_id", payload.sessionId);
               processed = true;
-            } 
-            else if (payload.type === "history" || payload.type === "recovery") {
+            } else
+
+            if (payload.type === "history" || payload.type === "recovery") {
               if (payload.type === "history") {
                 clearGrid(true);
-                const historyData = payload.history || payload.data || payload.logs || "";
+                const historyData =
+                payload.history || payload.data || payload.logs || "";
+
+                console.log("HISTORY LENGTH:", historyData.length);
+                console.log(
+                  "HISTORY PREVIEW:",
+                  JSON.stringify(historyData.slice(0, 500))
+                );
                 if (historyData) {
-                  writeToTerminal(historyData);
+                  clearGrid(true);
+
+                  const chunkSize = 1000;
+
+                  for (let i = 0; i < historyData.length; i += chunkSize) {
+                    writeToTerminal(historyData.slice(i, i + chunkSize));
+
+                    const nonEmpty = gridRef.current.some((row) =>
+                    row.some((cell) => cell.char !== " ")
+                    );
+
+                    console.log(
+                      `chunk ${i}-${Math.min(i + chunkSize, historyData.length)}:`,
+                      nonEmpty,
+                      "cursor:",
+                      cursorRef.current
+                    );
+                  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                 }
               }
               if (payload.type === "history" && waitingRef.current.length != 0) {
                 for (const item of waitingRef.current)
-                  ws.send(JSON.stringify({ type: "input", data: item }));
+                ws.send(JSON.stringify({ type: "input", data: item }));
                 waitingRef.current = [];
               }
               processed = true;
@@ -750,8 +858,8 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
                   cols: COLS,
                   rows: ROWS
                 }
-              }))
-              processed = true
+              }));
+              processed = true;
             }
           }
         } catch (_) {}
@@ -802,7 +910,7 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
         const mapped = getCtrlChar(rawKey);
         if (mapped !== null) payload = mapped;
       } else if (isAlt) {
-        payload = '\x1b' + rawKey; 
+        payload = '\x1b' + rawKey;
       } else if (isShift) {
         payload = rawKey.toUpperCase();
       }
@@ -815,10 +923,11 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
     setShiftPressed(false);
   };
 
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const text = e.target.value;
     if (text === '') {
-      sendKeyStroke("\x7f", true); 
+      sendKeyStroke("\x7f", true);
     } else if (text.length > 1) {
       const newChars = text.slice(1);
       sendKeyStroke(newChars);
@@ -834,7 +943,7 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
     if (e.key === 'Tab') {
       e.preventDefault();
       if (isShift) {
-        sendKeyStroke("\x1b[Z", true); 
+        sendKeyStroke("\x1b[Z", true);
       } else {
         sendKeyStroke("\t", true);
       }
@@ -845,11 +954,11 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
     if (e.key === 'Backspace') {
       e.preventDefault();
       if (isAlt) {
-        sendKeyStroke("\x1b\x7f", true); 
+        sendKeyStroke("\x1b\x7f", true);
       } else if (isCtrl) {
-        sendKeyStroke("\x17", true);     
+        sendKeyStroke("\x17", true);
       } else {
-        sendKeyStroke("\x7f", true);     
+        sendKeyStroke("\x7f", true);
       }
       setInputValue(' ');
       return;
@@ -858,9 +967,9 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
     if (e.key === 'Enter') {
       e.preventDefault();
       if (isAlt) {
-        sendKeyStroke("\x1b\r", true);   
+        sendKeyStroke("\x1b\r", true);
       } else {
-        sendKeyStroke("\r", true);       
+        sendKeyStroke("\r", true);
       }
       setInputValue(' ');
       return;
@@ -868,33 +977,33 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
 
     if (e.key === 'ArrowUp') {
       e.preventDefault();
-      if (isShift) sendKeyStroke("\x1b[1;2A", true);
-      else if (isCtrl) sendKeyStroke("\x1b[1;5A", true);
-      else sendKeyStroke("\x1b[A", true);
+      if (isShift) sendKeyStroke("\x1b[1;2A", true);else
+      if (isCtrl) sendKeyStroke("\x1b[1;5A", true);else
+      sendKeyStroke("\x1b[A", true);
       setInputValue(' ');
       return;
     }
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      if (isShift) sendKeyStroke("\x1b[1;2B", true);
-      else if (isCtrl) sendKeyStroke("\x1b[1;5B", true);
-      else sendKeyStroke("\x1b[B", true);
+      if (isShift) sendKeyStroke("\x1b[1;2B", true);else
+      if (isCtrl) sendKeyStroke("\x1b[1;5B", true);else
+      sendKeyStroke("\x1b[B", true);
       setInputValue(' ');
       return;
     }
     if (e.key === 'ArrowRight') {
       e.preventDefault();
-      if (isShift) sendKeyStroke("\x1b[1;2C", true);
-      else if (isCtrl) sendKeyStroke("\x1b[1;5C", true);
-      else sendKeyStroke("\x1b[C", true);
+      if (isShift) sendKeyStroke("\x1b[1;2C", true);else
+      if (isCtrl) sendKeyStroke("\x1b[1;5C", true);else
+      sendKeyStroke("\x1b[C", true);
       setInputValue(' ');
       return;
     }
     if (e.key === 'ArrowLeft') {
       e.preventDefault();
-      if (isShift) sendKeyStroke("\x1b[1;2D", true);
-      else if (isCtrl) sendKeyStroke("\x1b[1;5D", true);
-      else sendKeyStroke("\x1b[D", true);
+      if (isShift) sendKeyStroke("\x1b[1;2D", true);else
+      if (isCtrl) sendKeyStroke("\x1b[1;5D", true);else
+      sendKeyStroke("\x1b[D", true);
       setInputValue(' ');
       return;
     }
@@ -920,15 +1029,15 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
     if (!container) return;
 
     const handleWheelEvent = (e: WheelEvent) => {
-      e.preventDefault(); 
+      e.preventDefault();
       if (scrollingDisabled.current) return;
       if (isAltScreenRef.current) {
-        if (e.deltaY < 0) sendKeyStroke("\x1b[A", true);
-        else if (e.deltaY > 0) sendKeyStroke("\x1b[B", true);
+        if (e.deltaY < 0) sendKeyStroke("\x1b[A", true);else
+        if (e.deltaY > 0) sendKeyStroke("\x1b[B", true);
       } else {
         const maxScroll = scrollbackRef.current.length;
-        if (e.deltaY < 0) scrollOffsetRef.current = Math.min(maxScroll, scrollOffsetRef.current + 1);
-        else if (e.deltaY > 0) scrollOffsetRef.current = Math.max(0, scrollOffsetRef.current - 1);
+        if (e.deltaY < 0) scrollOffsetRef.current = Math.min(maxScroll, scrollOffsetRef.current + 1);else
+        if (e.deltaY > 0) scrollOffsetRef.current = Math.max(0, scrollOffsetRef.current - 1);
       }
     };
 
@@ -943,12 +1052,12 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
     const handleTouchMoveRaw = (e: TouchEvent) => {
       if (scrollingDisabled.current) return;
       if (e.touches.length === 1) {
-        e.preventDefault(); 
+        e.preventDefault();
         const currentY = e.touches[0].clientY;
         const diffY = currentY - touchStartRef.current.y;
         const delta = diffY - touchAccumulatedRef.current;
-        const threshold = 30; 
-        
+        const threshold = 30;
+
         if (Math.abs(delta) >= threshold) {
           const steps = Math.trunc(delta / threshold);
           if (isAltScreenRef.current) {
@@ -957,9 +1066,9 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
             }
           } else {
             const maxScroll = scrollbackRef.current.length;
-            scrollOffsetRef.current = steps > 0 
-              ? Math.min(maxScroll, scrollOffsetRef.current + steps)
-              : Math.max(0, scrollOffsetRef.current - Math.abs(steps));
+            scrollOffsetRef.current = steps > 0 ?
+            Math.min(maxScroll, scrollOffsetRef.current + steps) :
+            Math.max(0, scrollOffsetRef.current - Math.abs(steps));
           }
           touchAccumulatedRef.current += steps * threshold;
         }
@@ -969,7 +1078,7 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
     container.addEventListener('wheel', handleWheelEvent, { passive: false });
     container.addEventListener('touchstart', handleTouchStartRaw, { passive: true });
     container.addEventListener('touchmove', handleTouchMoveRaw, { passive: false });
-    
+
     return () => {
       container.removeEventListener('wheel', handleWheelEvent);
       container.removeEventListener('touchstart', handleTouchStartRaw);
@@ -978,136 +1087,312 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
   }, []);
 
   useEffect(() => {
-  const canvas = canvasRef.current;
-  if (!canvas) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-  const mouseStartPosRef = { current: null as { x: number; y: number } | null };
-  const touchStartPosRef = { current: null as { x: number; y: number } | null };
-  const longPressTimerRef = { current: null as NodeJS.Timeout | number | null };
+    const mouseStartPosRef = { current: null as {x: number;y: number;} | null };
+    const touchStartPosRef = { current: null as {x: number;y: number;} | null };
+    const longPressTimerRef = { current: null as NodeJS.Timeout | number | null };
 
-  const handleGlobalPointerDown = (e: MouseEvent | TouchEvent) => {
-    if (canvasRef.current && !canvasRef.current.contains(e.target as Node)) {
-      selectionRef.current = { start: null, end: null, isSelecting: false };
-    }
-  };
 
-  const handleMouseDown = (e: MouseEvent) => {
-    if (e.button !== 0) return;
-    const coords = getGridCoords(e, canvas);
-    mouseStartPosRef.current = { x: e.clientX, y: e.clientY };
-    selectionRef.current.start = coords;
-  };
+    const handleGlobalPointerDown = (e: MouseEvent | TouchEvent) => {
+      if (canvasRef.current && !canvasRef.current.contains(e.target as Node)) {
+        selectionRef.current = { start: null, end: null, isSelecting: false };
+      }
+    };
 
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!mouseStartPosRef.current) return;
-    const coords = getGridCoords(e, canvas);
-    const startPos = mouseStartPosRef.current;
 
-    const dist = Math.hypot(e.clientX - startPos.x, e.clientY - startPos.y);
-    const movedInGrid =
+    const handleMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      const coords = getGridCoords(e, canvas);
+      mouseStartPosRef.current = { x: e.clientX, y: e.clientY };
+      selectionRef.current.start = coords;
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!mouseStartPosRef.current) return;
+      const coords = getGridCoords(e, canvas);
+      const startPos = mouseStartPosRef.current;
+
+      const dist = Math.hypot(e.clientX - startPos.x, e.clientY - startPos.y);
+      const movedInGrid =
       selectionRef.current.start?.x !== coords.x ||
       selectionRef.current.start?.lineIndex !== coords.lineIndex;
 
-    if (!selectionRef.current.isSelecting && (dist > 3 || movedInGrid)) {
-      selectionRef.current.isSelecting = true;
-      scrollingDisabled.current = true;
-    }
 
-    if (selectionRef.current.isSelecting) {
+      if (!selectionRef.current.isSelecting && (dist > 3 || movedInGrid)) {
+        selectionRef.current.isSelecting = true;
+        scrollingDisabled.current = true;
+      }
+
+      if (selectionRef.current.isSelecting) {
+        selectionRef.current.end = coords;
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (mouseStartPosRef.current) {
+
+        if (!selectionRef.current.isSelecting) {
+          selectionRef.current = { start: null, end: null, isSelecting: false };
+          scrollingDisabled.current = false;
+        } else {
+          selectionRef.current.isSelecting = false;
+          scrollingDisabled.current = false;
+        }
+      }
+      mouseStartPosRef.current = null;
+    };
+
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      const touch = e.touches[0];
+      const coords = getGridCoords(touch, canvas);
+
+      touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
+
+      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+
+
+      longPressTimerRef.current = setTimeout(() => {
+        selectionRef.current = { start: coords, end: coords, isSelecting: true };
+        scrollingDisabled.current = true;
+        if (navigator.vibrate) navigator.vibrate(30);
+      }, 500);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      const touch = e.touches[0];
+
+
+      if (!selectionRef.current.isSelecting) {
+        if (touchStartPosRef.current) {
+          const dist = Math.hypot(
+            touch.clientX - touchStartPosRef.current.x,
+            touch.clientY - touchStartPosRef.current.y
+          );
+
+          if (dist > 8 && longPressTimerRef.current) {
+            clearTimeout(longPressTimerRef.current);
+          }
+        }
+        return;
+      }
+
+
+      if (e.cancelable) e.preventDefault();
+      const coords = getGridCoords(touch, canvas);
       selectionRef.current.end = coords;
-    }
-  };
+    };
 
-  const handleMouseUp = () => {
-    if (mouseStartPosRef.current) {
+    const handleTouchEnd = () => {
+      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+
+
       if (!selectionRef.current.isSelecting) {
         selectionRef.current = { start: null, end: null, isSelecting: false };
         scrollingDisabled.current = false;
-      } else {
-        selectionRef.current.isSelecting = false;
-        scrollingDisabled.current = false;
       }
-    }
-    mouseStartPosRef.current = null;
-  };
 
-  const handleTouchStart = (e: TouchEvent) => {
-    if (e.touches.length !== 1) return;
-    const touch = e.touches[0];
-    const coords = getGridCoords(touch, canvas);
-
-    touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
-
-    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
-
-    longPressTimerRef.current = setTimeout(() => {
-      selectionRef.current = { start: coords, end: coords, isSelecting: true };
-      scrollingDisabled.current = true;
-      if (navigator.vibrate) navigator.vibrate(30);
-    }, 500);
-  };
-
-  const handleTouchMove = (e: TouchEvent) => {
-    if (e.touches.length !== 1) return;
-    const touch = e.touches[0];
-
-    if (!selectionRef.current.isSelecting) {
-      if (touchStartPosRef.current) {
-        const dist = Math.hypot(
-          touch.clientX - touchStartPosRef.current.x,
-          touch.clientY - touchStartPosRef.current.y
-        );
-        if (dist > 8 && longPressTimerRef.current) {
-          clearTimeout(longPressTimerRef.current);
-        }
-      }
-      return; 
-    }
-
-    if (e.cancelable) e.preventDefault();
-    const coords = getGridCoords(touch, canvas);
-    selectionRef.current.end = coords;
-  };
-
-  const handleTouchEnd = () => {
-    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
-
-    if (!selectionRef.current.isSelecting) {
-      selectionRef.current = { start: null, end: null, isSelecting: false };
+      selectionRef.current.isSelecting = false;
       scrollingDisabled.current = false;
-    }
+      touchStartPosRef.current = null;
+    };
 
-    selectionRef.current.isSelecting = false;
-    scrollingDisabled.current = false;
-    touchStartPosRef.current = null;
-  };
 
-  window.addEventListener('mousedown', handleGlobalPointerDown);
-  window.addEventListener('touchstart', handleGlobalPointerDown);
+    window.addEventListener('mousedown', handleGlobalPointerDown);
+    window.addEventListener('touchstart', handleGlobalPointerDown);
 
-  canvas.addEventListener('mousedown', handleMouseDown);
-  window.addEventListener('mousemove', handleMouseMove);
-  window.addEventListener('mouseup', handleMouseUp);
+    canvas.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
 
-  canvas.addEventListener('touchstart', handleTouchStart, { passive: true });
-  canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-  window.addEventListener('touchend', handleTouchEnd);
-  window.addEventListener('touchcancel', handleTouchEnd);
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: true });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchend', handleTouchEnd);
+    window.addEventListener('touchcancel', handleTouchEnd);
 
-  return () => {
-    window.removeEventListener('mousedown', handleGlobalPointerDown);
-    window.removeEventListener('touchstart', handleGlobalPointerDown);
+    return () => {
+      window.removeEventListener('mousedown', handleGlobalPointerDown);
+      window.removeEventListener('touchstart', handleGlobalPointerDown);
 
-    canvas.removeEventListener('mousedown', handleMouseDown);
-    window.removeEventListener('mousemove', handleMouseMove);
-    window.removeEventListener('mouseup', handleMouseUp);
+      canvas.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
 
-    canvas.removeEventListener('touchstart', handleTouchStart);
-    canvas.removeEventListener('touchmove', handleTouchMove);
-    window.removeEventListener('touchend', handleTouchEnd);
-    window.removeEventListener('touchcancel', handleTouchEnd);
-  };
-}, [connectionState]);
+      canvas.removeEventListener('touchstart', handleTouchStart);
+      canvas.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, [connectionState]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -1129,17 +1414,19 @@ const longPressTimerRef = useRef<NodeJS.Timeout | number | null>(null);
 
       ctx.fillStyle = bgValue || '#0a0a0a';
       ctx.fillRect(0, 0, CONTAINER_WIDTH, CONTAINER_HEIGHT);
-      const trackHeight = CONTAINER_HEIGHT - (controls ? 132 : 0) - (PADDING * 2);
-const scrollThumbSize = Math.max(10, (ROWS / (scrollbackRef.current.length + ROWS)) * trackHeight);
-      const scrollThumbSize2 = Math.max(10, (ROWS / (0 + ROWS)) * trackHeight);
+      const trackHeight = CONTAINER_HEIGHT - (controls ? 132 : 0) - PADDING * 2;
+      const scrollThumbSize = Math.max(10, ROWS / (scrollbackRef.current.length + ROWS) * trackHeight);
+      const scrollThumbSize2 = Math.max(10, ROWS / (0 + ROWS) * trackHeight);
 
-const maxScrollOffset = scrollbackRef.current.length || 1;
-const rawRatio = Math.min(1, Math.max(0, Math.abs(scrollOffsetRef.current) / maxScrollOffset));
+      const maxScrollOffset = scrollbackRef.current.length || 1;
+      const rawRatio = Math.min(1, Math.max(0, Math.abs(scrollOffsetRef.current) / maxScrollOffset));
 
-const scrollRatio = 1 - rawRatio;
 
-const maxPos = trackHeight - scrollThumbSize;
-const pos = (scrollRatio * maxPos) + PADDING;
+
+      const scrollRatio = 1 - rawRatio;
+
+      const maxPos = trackHeight - scrollThumbSize;
+      const pos = scrollRatio * maxPos + PADDING;
 
       ctx.font = '18px "Courier New", Courier, monospace';
       ctx.textBaseline = 'top';
@@ -1150,6 +1437,7 @@ const pos = (scrollRatio * maxPos) + PADDING;
       const startIndex = totalLines - ROWS - scrollOffset;
 
       if (Date.now() - lastBlinkTime > 500) {
+
         lastBlinkTime = Date.now();
       }
 
@@ -1168,89 +1456,141 @@ const pos = (scrollRatio * maxPos) + PADDING;
       }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       for (let y = 0; y < ROWS; y++) {
         const visualY = y + scrollOffset;
         const cords = cursorRef.current;
         const lineIndex = startIndex + y;
         const rowCells = combined[lineIndex] || Array.from({ length: COLS }, () => ({ char: ' ', fg: '#ffffff', bg: '#0a0a0a' }));
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         for (let x = 0; x < COLS; x++) {
-  const cell = rowCells[x] || { char: ' ', fg: '#ffffff', bg: '#0a0a0a' };
-  const isCursor = (x === cords.x && y === cords.y) && connectionState === "connected" && (x >= 0 && x < COLS && visualY >= 0 && visualY < ROWS);
-  const selected = isCellSelected(x, lineIndex);
+          const cell = rowCells[x] || { char: ' ', fg: '#ffffff', bg: '#0a0a0a' };
+          const isCursor = x === cords.x && y === cords.y && connectionState === "connected" && x >= 0 && x < COLS && visualY >= 0 && visualY < ROWS;
+          const selected = isCellSelected(x, lineIndex);
 
-  const px = PADDING + x * CHARACTER_WIDTH;
-  const py = PADDING + y * CHARACTER_HEIGHT;
+          const px = PADDING + x * CHARACTER_WIDTH;
+          const py = PADDING + y * CHARACTER_HEIGHT;
 
-    const DEFAULT_BG = '#0a0a0a';
-const DEFAULT_FG = '#ffffff';
 
-const hasCustomBg = cell.bg && cell.bg !== DEFAULT_BG;
+          const DEFAULT_BG = '#0a0a0a';
+          const DEFAULT_FG = '#ffffff';
 
-const bgColor = selected
-  ? (hasCustomBg 
-      ? DEFAULT_FG 
-      : (cell.fg ?? DEFAULT_FG))
-  : (hasCustomBg ? cell.bg : null);
+          const hasCustomBg = cell.bg && cell.bg !== DEFAULT_BG;
 
-if (bgColor) {
-  ctx.fillStyle = bgColor;
-  ctx.fillRect(px, py, Math.ceil(CHARACTER_WIDTH), CHARACTER_HEIGHT);
-}
 
-  const fgColor = selected ? '#000000' : (isCursor ? '#000000' : (cell.fg || '#ffffff'));
-  if (cell.char !== ' ') {
-    ctx.fillStyle = fgColor;
-    ctx.fillText(cell.char, px, py);
-  }
+          const bgColor = selected ?
+          hasCustomBg ?
+          DEFAULT_FG :
+          cell.fg ?? DEFAULT_FG :
+          hasCustomBg ? cell.bg : null;
+
+          if (bgColor) {
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(px, py, Math.ceil(CHARACTER_WIDTH), CHARACTER_HEIGHT);
+          }
+
+
+
+
+
+
+
+          const fgColor = selected ? '#000000' : isCursor ? '#000000' : cell.fg || '#ffffff';
+          if (cell.char !== ' ') {
+            ctx.fillStyle = fgColor;
+            ctx.fillText(cell.char, px, py);
+          }
         }
       }
 
+
       ctx.fillStyle = '#ffffff';
       if (scrollThumbSize != scrollThumbSize2) {
-        ctx.fillRect(CONTAINER_WIDTH - (CHARACTER_WIDTH * 2 - (CHARACTER_WIDTH / 2)) - PADDING, pos, (CHARACTER_WIDTH * 2 - (CHARACTER_WIDTH / 2)),  scrollThumbSize);
+        ctx.fillRect(CONTAINER_WIDTH - (CHARACTER_WIDTH * 2 - CHARACTER_WIDTH / 2) - PADDING, pos, CHARACTER_WIDTH * 2 - CHARACTER_WIDTH / 2, scrollThumbSize);
       }
 
       const sel = selectionRef.current;
-  const popoverEl = popoverRef.current;
+      const popoverEl = popoverRef.current;
 
-  if (popoverEl) {
-    if (sel.start && sel.end && !sel.isSelecting) {
-      let start = sel.start;
-      let end = sel.end;
+      if (popoverEl) {
 
-      if (
-        start.lineIndex > end.lineIndex ||
-        (start.lineIndex === end.lineIndex && start.x > end.x)
-      ) {
-        [start, end] = [end, start];
+        if (sel.start && sel.end && !sel.isSelecting) {
+
+          let start = sel.start;
+          let end = sel.end;
+
+          if (
+          start.lineIndex > end.lineIndex ||
+          start.lineIndex === end.lineIndex && start.x > end.x)
+          {
+            [start, end] = [end, start];
+          }
+
+
+          const visualY = start.lineIndex - startIndex;
+
+
+          if (visualY < 0 || visualY >= ROWS) {
+            popoverEl.style.display = 'none';
+          } else {
+
+            const px = PADDING + start.x * CHARACTER_WIDTH;
+            const py = PADDING + visualY * CHARACTER_HEIGHT;
+
+            popoverEl.style.display = 'flex';
+            popoverEl.style.left = `${px}px`;
+            popoverEl.style.top = `${py}px`;
+          }
+        } else {
+          popoverEl.style.display = 'none';
+        }
       }
 
-      const visualY = start.lineIndex - startIndex;
-
-      if (visualY < 0 || visualY >= ROWS) {
-        popoverEl.style.display = 'none';
-      } else {
-        const px = PADDING + start.x * CHARACTER_WIDTH;
-        const py = PADDING + visualY * CHARACTER_HEIGHT;
-
-        popoverEl.style.display = 'flex';
-        popoverEl.style.left = `${px}px`;
-        popoverEl.style.top = `${py}px`;
-      }
-    } else {
-      popoverEl.style.display = 'none';
-    }
-  }
-      
       ctx.restore();
       animationFrameId = requestAnimationFrame(render);
     };
 
     render();
-    return () =>  {
+    return () => {
       cancelAnimationFrame(animationFrameId);
-    }
+    };
   }, [connectionState]);
 
   const forceFocus = () => {
@@ -1265,12 +1605,13 @@ if (bgColor) {
   };
 
   const buttonStyle = (active: boolean, restart?: boolean) => ({
-    background: active ? `color-mix(in srgb, ${controlsColorValue || "#000000"} 60%, #ffffff)` : (controlsColorValue || "#1a1a1a"),
+    background: active ? `color-mix(in srgb, ${controlsColorValue || "#000000"} 60%, #ffffff)` : controlsColorValue || "#1a1a1a",
     color: active ? "#000000" : "#ffffff",
+
     border: 'none',
     borderRadius: "0",
-    width: (restart ? "200%" : "100%"),
-    height: "44px", 
+    width: restart ? "200%" : "100%",
+    height: "44px",
     fontSize: "11px",
     fontFamily: "monospace",
     cursor: "pointer",
@@ -1286,117 +1627,128 @@ if (bgColor) {
   });
 
   const stopEvent = (e: React.SyntheticEvent) => {
-  e.stopPropagation();
-};
+    e.stopPropagation();
+  };
 
   return (
     <div style={{
-      display: "flex", 
-      flexDirection: "row", 
-      alignItems: "flex-start", 
+      display: "flex",
+      flexDirection: "row",
+      alignItems: "flex-start",
       gap: "8px",
       ...combinedStyles
     }}
-      {...rest}>
+    {...rest}>
 
       <div
         style={{
           position: "relative"
-        }}
-      >
+        }}>
+        
+        {}
   <div
-    ref={popoverRef}
-    style={{
-      position: "absolute",
-      display: "none", 
-      transform: "translate(0, -100%)", 
-      marginTop: "-6px", 
-      zIndex: 10,
-      backgroundColor: "#1e1e1e",
-      border: "1px solid #333",
-      borderRadius: "999px",
-      padding: "4px 8px",
-      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.5)",
-      alignItems: "center",
-      gap: "6px",
-      pointerEvents: "auto",
-    }}
-    onPointerDown={stopEvent}
-  onPointerUp={stopEvent}
-  onMouseDown={stopEvent}
-  onMouseUp={stopEvent}
-  onTouchStart={stopEvent}
-  onTouchEnd={stopEvent}
-  onClick={stopEvent}
-  >
+          ref={popoverRef}
+          style={{
+            position: "absolute",
+            display: "none",
+            transform: "translate(0, -100%)",
+            marginTop: "-6px",
+            zIndex: 10,
+            backgroundColor: "#1e1e1e",
+            border: "1px solid #333",
+            borderRadius: "999px",
+            padding: "4px 8px",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.5)",
+            alignItems: "center",
+            gap: "6px",
+            pointerEvents: "auto"
+          }}
+
+          onPointerDown={stopEvent}
+          onPointerUp={stopEvent}
+          onMouseDown={stopEvent}
+          onMouseUp={stopEvent}
+          onTouchStart={stopEvent}
+          onTouchEnd={stopEvent}
+          onClick={stopEvent}>
+          
     <button
-  onPointerDown={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }}
-  onClick={async (e) => {
-    e.stopPropagation();
+            onPointerDown={(e) => {
 
-    const combined = [...scrollbackRef.current, ...gridRef.current];
-const textToCopy = getSelectedText(combined, selectionRef.current);
-    if (!textToCopy) return;
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onClick={async (e) => {
+              e.stopPropagation();
 
-    try {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(textToCopy);
-      } else {
-        const textArea = document.createElement("textarea");
-        textArea.value = textToCopy;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textArea);
-      }
-    } catch (err) {
-      console.error("Failed to copy text: ", err);
-    }
 
-    selectionRef.current = { start: null, end: null, isSelecting: false };
-    if (popoverRef.current) popoverRef.current.style.display = 'none';
-    forceFocus();
-  }}
-  style={{
-    background: "#333",
-    color: "#fff",
-    border: "none",
-    borderRadius: "999px",
-    padding: "4px 8px",
-    fontSize: "11px",
-    fontFamily: "monospace",
-    cursor: "pointer",
-  }}
->
+              const combined = [...scrollbackRef.current, ...gridRef.current];
+              const textToCopy = getSelectedText(combined, selectionRef.current);
+              if (!textToCopy) return;
+
+              try {
+
+                if (navigator.clipboard && window.isSecureContext) {
+                  await navigator.clipboard.writeText(textToCopy);
+                } else {
+
+                  const textArea = document.createElement("textarea");
+                  textArea.value = textToCopy;
+                  document.body.appendChild(textArea);
+                  textArea.select();
+                  document.execCommand("copy");
+                  document.body.removeChild(textArea);
+                }
+              } catch (err) {
+                console.error("Failed to copy text: ", err);
+              }
+
+
+              selectionRef.current = { start: null, end: null, isSelecting: false };
+              if (popoverRef.current) popoverRef.current.style.display = 'none';
+              forceFocus();
+            }}
+            style={{
+              background: "#333",
+              color: "#fff",
+              border: "none",
+              borderRadius: "999px",
+              padding: "4px 8px",
+              fontSize: "11px",
+              fontFamily: "monospace",
+              cursor: "pointer"
+            }}>
+            
   Copy
 </button>
   </div>
       </div>
       
-      <div 
+      {}
+      <div
         ref={containerRef}
-        onClick={forceFocus} 
-        style={{ 
-          position: "relative", 
+        onClick={forceFocus}
+        style={{
+          position: "relative",
           width: CONTAINER_WIDTH,
-          height: CONTAINER_HEIGHT, 
-          borderRadius: 10, 
+          height: CONTAINER_HEIGHT,
+          borderRadius: 10,
           backgroundColor: "#333",
-          overflow: "hidden",
-        }}
-      >
-        <canvas ref={canvasRef} style={{ touchAction: 'none', width: "100%", height: (CONTAINER_HEIGHT - (controls ? 132 : 0)) + "px", display: "block" }} />
+          overflow: "hidden"
 
-        {controls ? (<div style={{ 
-        display: "grid", 
-        gridTemplateColumns: "repeat(6, 1fr)", 
-        width: CONTAINER_WIDTH, 
-        height: "132px", 
-        bottom: 0,
-      }}>
+        }}>
+        
+        <canvas ref={canvasRef} style={{ touchAction: 'none', width: "100%", height: CONTAINER_HEIGHT - (controls ? 132 : 0) + "px", display: "block" }} />
+
+        {controls ? <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(6, 1fr)",
+
+          width: CONTAINER_WIDTH,
+          height: "132px",
+          bottom: 0
+        }}>
+        {}
         <RepeatingButton style={buttonStyle(false)} onAction={(e) => {sendKeyStroke("\x1b", true);}} onFocus={forceFocus}>
           ESC
         </RepeatingButton>
@@ -1404,6 +1756,7 @@ const textToCopy = getSelectedText(combined, selectionRef.current);
           PGUP
         </RepeatingButton>
 
+        {}
         <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\t", true)} onFocus={forceFocus}>
           TAB
         </RepeatingButton>
@@ -1411,6 +1764,7 @@ const textToCopy = getSelectedText(combined, selectionRef.current);
           PGDN
         </RepeatingButton>
 
+        {}
         <Button style={buttonStyle(ctrlPressed)} onPointerDown={(e) => handleToggleClick(e, () => setCtrlPressed(!ctrlPressed))}>
           CTRL
         </Button>
@@ -1418,6 +1772,7 @@ const textToCopy = getSelectedText(combined, selectionRef.current);
           -
         </RepeatingButton>
 
+        {}
         <Button style={buttonStyle(altPressed)} onPointerDown={(e) => handleToggleClick(e, () => setAltPressed(!altPressed))}>
           ALT
         </Button>
@@ -1425,6 +1780,7 @@ const textToCopy = getSelectedText(combined, selectionRef.current);
           \
         </RepeatingButton>
 
+        {}
         <Button style={buttonStyle(shiftPressed)} onPointerDown={(e) => handleToggleClick(e, () => setShiftPressed(!shiftPressed))}>
           SHFT
         </Button>
@@ -1432,6 +1788,7 @@ const textToCopy = getSelectedText(combined, selectionRef.current);
           ↑
         </RepeatingButton>
 
+        {}
         <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("/")} onFocus={forceFocus}>
           /
         </RepeatingButton>
@@ -1439,6 +1796,7 @@ const textToCopy = getSelectedText(combined, selectionRef.current);
           ←
         </RepeatingButton>
 
+        {}
         <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[H", true)} onFocus={forceFocus}>
           HOME
         </RepeatingButton>
@@ -1446,6 +1804,7 @@ const textToCopy = getSelectedText(combined, selectionRef.current);
           ↓
         </RepeatingButton>
 
+        {}
         <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[F", true)} onFocus={forceFocus}>
           END
         </RepeatingButton>
@@ -1453,68 +1812,170 @@ const textToCopy = getSelectedText(combined, selectionRef.current);
           →
         </RepeatingButton>
         <Button style={buttonStyle(false, true)} onClick={() => {
-        clearGrid(true);
-        setRestartable(true);
-        wsRef.current?.send(JSON.stringify({ type: (restartable ? "restart" : "init"), data: { cols: COLS, rows: ROWS, sessionId: sessionIdRef.current } }))
-      }} onFocus={forceFocus}>
+            clearGrid(true);
+            setRestartable(true);
+
+            wsRef.current?.send(JSON.stringify({ type: restartable ? "restart" : "init", data: { cols: COLS, rows: ROWS, sessionId: sessionIdRef.current } }));
+          }} onFocus={forceFocus}>
           {restartable ? "Restart" : "Start"}
         </Button>
-        </div>) : null}
+        </div> : null}
         
-        {connectionState === "reconnecting" && (
-          <div style={{
-            position: "absolute",
-            inset: 0,
-            background: "rgba(10, 10, 10, 0.8)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#ffff55",
-            fontFamily: "monospace",
-            fontSize: "12px",
-            gap: "8px",
-            zIndex: 2,
-            pointerEvents: "none"
-          }}>
+        {connectionState === "reconnecting" &&
+        <div style={{
+          position: "absolute",
+          inset: 0,
+          background: "rgba(10, 10, 10, 0.8)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#ffff55",
+          fontFamily: "monospace",
+          fontSize: "12px",
+          gap: "8px",
+          zIndex: 2,
+          pointerEvents: "none"
+        }}>
+            {
+
+
+
+
+
+          }
             Reconnecting...
           </div>
-        )}
+        }
 
-        <input 
-          type="text" 
-          ref={inputRef} 
-          value={inputValue} 
-          onChange={handleInputChange} 
-          onKeyDown={handleKeyDown} 
+        <input
+          type="text"
+          ref={inputRef}
+          value={inputValue}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
           onPaste={handlePaste}
-          aria-hidden="true" 
-          autoCapitalize="none" 
-          autoCorrect="off" 
-          autoComplete="off" 
-          spellCheck="false" 
-          style={{ 
-            position: "absolute", 
-            top: (PADDING + _y_ * CHARACTER_HEIGHT) + "px", 
-            left: 0, 
-            width: CONTAINER_WIDTH, 
-            height: CHARACTER_HEIGHT + "px", 
-            opacity: 0, 
-            background: "transparent", 
-            border: "none", 
-            outline: "none", 
-            color: "transparent", 
-            caretColor: "transparent", 
-            fontSize: "16px", 
+          aria-hidden="true"
+          autoCapitalize="none"
+          autoCorrect="off"
+          autoComplete="off"
+          spellCheck="false"
+          style={{
+            position: "absolute",
+            top: PADDING + _y_ * CHARACTER_HEIGHT + "px",
+            left: 0,
+            width: CONTAINER_WIDTH,
+            height: CHARACTER_HEIGHT + "px",
+            opacity: 0,
+            background: "transparent",
+            border: "none",
+            outline: "none",
+            color: "transparent",
+            caretColor: "transparent",
+            fontSize: "16px",
             zIndex: -1,
             cursor: "text"
-          }} 
-        />
+          }} />
+        
       </div>
 
-      /*
-        <RepeatingButton style={buttonStyle(false)} onAction={(e) => {sendKeyStroke("\x1b", true);}
+      {}
+      {
 
 
-    </div>
-  );
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      }
+
+      {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      }
+
+      {
+
+
+
+
+      }
+    </div>);
+
+};

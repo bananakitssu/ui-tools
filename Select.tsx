@@ -21,7 +21,7 @@ export const Select: React.FC<SelectProps> = ({
   value,
   onChange,
   placeholder = 'Select an option...',
-  style,
+  style
 }) => {
   const theme = useTheme();
   const [isOpen, setIsOpen] = useState(false);
@@ -65,14 +65,14 @@ export const Select: React.FC<SelectProps> = ({
       if (!isOpen) {
         setIsOpen(true);
       } else {
-        setHighlightedIndex((prev) => (prev < options.length - 1 ? prev + 1 : 0));
+        setHighlightedIndex((prev) => prev < options.length - 1 ? prev + 1 : 0);
       }
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       if (!isOpen) {
         setIsOpen(true);
       } else {
-        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : options.length - 1));
+        setHighlightedIndex((prev) => prev > 0 ? prev - 1 : options.length - 1);
       }
     } else if (e.key === 'Escape') {
       setIsOpen(false);
@@ -83,11 +83,11 @@ export const Select: React.FC<SelectProps> = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%', maxWidth: '300px', ...style }}>
-      {label && (
-        <label style={{ fontSize: theme.typography.size.sm, fontWeight: theme.typography.weight.semibold, fontFamily: theme.typography.display, color: theme.colors.ink }}>
+      {label &&
+      <label style={{ fontSize: theme.typography.size.sm, fontWeight: theme.typography.weight.semibold, fontFamily: theme.typography.display, color: theme.colors.ink }}>
           {label}
         </label>
-      )}
+      }
 
       <div
         ref={containerRef}
@@ -113,9 +113,9 @@ export const Select: React.FC<SelectProps> = ({
           outline: 'none',
           boxSizing: 'border-box',
           fontFamily: theme.typography.body,
-          transition: 'border-color 0.15s ease',
-        }}
-      >
+          transition: 'border-color 0.15s ease'
+        }}>
+        
         <span style={{ fontSize: theme.typography.size.base, color: selectedOption ? theme.colors.ink : theme.colors.textMuted }}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
@@ -132,72 +132,72 @@ export const Select: React.FC<SelectProps> = ({
           style={{
             transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
             transition: 'transform 0.2s ease',
-            flexShrink: 0,
-          }}
-        >
+            flexShrink: 0
+          }}>
+          
           <polyline points="6 9 12 15 18 9" />
         </svg>
 
-        {isOpen && (
-          <ul
-            role="listbox"
-            style={{
-              position: 'absolute',
-              top: 'calc(100% + 6px)',
-              left: 0,
-              right: 0,
-              backgroundColor: theme.colors.surface,
-              border: `1px solid ${theme.colors.borderSubtle}`,
-              borderRadius: theme.radii.md,
-              boxShadow: theme.shadow.dropdown,
-              listStyle: 'none',
-              padding: '6px',
-              margin: 0,
-              zIndex: 100,
-              maxHeight: '200px',
-              overflowY: 'auto',
-            }}
-          >
+        {isOpen &&
+        <ul
+          role="listbox"
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 6px)',
+            left: 0,
+            right: 0,
+            backgroundColor: theme.colors.surface,
+            border: `1px solid ${theme.colors.borderSubtle}`,
+            borderRadius: theme.radii.md,
+            boxShadow: theme.shadow.dropdown,
+            listStyle: 'none',
+            padding: '6px',
+            margin: 0,
+            zIndex: 100,
+            maxHeight: '200px',
+            overflowY: 'auto'
+          }}>
+          
             {options.map((option, index) => {
-              const isSelected = option.value === value;
-              const isHighlighted = index === highlightedIndex;
+            const isSelected = option.value === value;
+            const isHighlighted = index === highlightedIndex;
 
-              return (
-                <li
-                  key={option.value}
-                  role="option"
-                  aria-selected={isSelected}
-                  onMouseEnter={() => setHighlightedIndex(index)}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    selectOption(option);
-                  }}
-                  style={{
-                    padding: '9px 12px',
-                    fontSize: theme.typography.size.sm,
-                    color: theme.colors.ink,
-                    borderRadius: '7px',
-                    backgroundColor: isHighlighted ? theme.colors.primaryLight : 'transparent',
-                    fontWeight: isSelected ? theme.typography.weight.semibold : theme.typography.weight.regular,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    transition: 'background-color 0.1s ease',
-                  }}
-                >
+            return (
+              <li
+                key={option.value}
+                role="option"
+                aria-selected={isSelected}
+                onMouseEnter={() => setHighlightedIndex(index)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  selectOption(option);
+                }}
+                style={{
+                  padding: '9px 12px',
+                  fontSize: theme.typography.size.sm,
+                  color: theme.colors.ink,
+                  borderRadius: '7px',
+                  backgroundColor: isHighlighted ? theme.colors.primaryLight : 'transparent',
+                  fontWeight: isSelected ? theme.typography.weight.semibold : theme.typography.weight.regular,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  transition: 'background-color 0.1s ease'
+                }}>
+                
                   <span>{option.label}</span>
-                  {isSelected && (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="3">
+                  {isSelected &&
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="3">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
-                  )}
-                </li>
-              );
-            })}
+                }
+                </li>);
+
+          })}
           </ul>
-        )}
+        }
       </div>
-    </div>
-  );
+    </div>);
+
 };

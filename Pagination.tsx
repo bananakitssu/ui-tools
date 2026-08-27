@@ -3,6 +3,7 @@ import { useTheme } from './theme';
 
 export interface PaginationProps {
   count: number;
+
   page: number;
   onChange: (page: number) => void;
   style?: React.CSSProperties;
@@ -35,7 +36,7 @@ export const Pagination: React.FC<PaginationProps> = ({ count, page, onChange, s
     background: 'transparent',
     fontFamily: theme.typography.body,
     fontSize: theme.typography.size.sm,
-    color: theme.colors.ink,
+    color: theme.colors.ink
   };
 
   return (
@@ -48,48 +49,48 @@ export const Pagination: React.FC<PaginationProps> = ({ count, page, onChange, s
         overflowX: 'auto',
         overflowY: 'hidden',
         WebkitOverflowScrolling: 'touch',
-        ...style,
-      }}
-    >
+        ...style
+      }}>
+      
       <button
         onClick={() => page > 1 && onChange(page - 1)}
         disabled={page <= 1}
         aria-label="Previous page"
-        style={{ ...buttonBase, opacity: page <= 1 ? 0.4 : 1, cursor: page <= 1 ? 'not-allowed' : 'pointer' }}
-      >
+        style={{ ...buttonBase, opacity: page <= 1 ? 0.4 : 1, cursor: page <= 1 ? 'not-allowed' : 'pointer' }}>
+        
         ‹
       </button>
 
       {pages.map((p, i) =>
-        p === '...' ? (
-          <span key={`ellipsis-${i}`} style={{ ...buttonBase, cursor: 'default', color: theme.colors.textMuted }}>
+      p === '...' ?
+      <span key={`ellipsis-${i}`} style={{ ...buttonBase, cursor: 'default', color: theme.colors.textMuted }}>
             …
-          </span>
-        ) : (
-          <button
-            key={p}
-            onClick={() => onChange(p)}
-            style={{
-              ...buttonBase,
-              backgroundColor: p === page ? theme.colors.primary : 'transparent',
-              color: p === page ? '#ffffff' : theme.colors.ink,
-              fontWeight: p === page ? theme.typography.weight.semibold : theme.typography.weight.regular,
-              cursor: 'pointer',
-            }}
-          >
+          </span> :
+
+      <button
+        key={p}
+        onClick={() => onChange(p)}
+        style={{
+          ...buttonBase,
+          backgroundColor: p === page ? theme.colors.primary : 'transparent',
+          color: p === page ? '#ffffff' : theme.colors.ink,
+          fontWeight: p === page ? theme.typography.weight.semibold : theme.typography.weight.regular,
+          cursor: 'pointer'
+        }}>
+        
             {p}
           </button>
-        )
+
       )}
 
       <button
         onClick={() => page < count && onChange(page + 1)}
         disabled={page >= count}
         aria-label="Next page"
-        style={{ ...buttonBase, opacity: page >= count ? 0.4 : 1, cursor: page >= count ? 'not-allowed' : 'pointer' }}
-      >
+        style={{ ...buttonBase, opacity: page >= count ? 0.4 : 1, cursor: page >= count ? 'not-allowed' : 'pointer' }}>
+        
         ›
       </button>
-    </div>
-  );
+    </div>);
+
 };

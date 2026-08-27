@@ -27,6 +27,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
   const handlePointerDown = () => startRipple(0, 0, HIT_SIZE);
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+
     if (e.detail === 0 && !disabled) {
       startRipple(0, 0, HIT_SIZE);
       window.setTimeout(endRipple, 120);
@@ -44,9 +45,9 @@ export const Checkbox: React.FC<CheckboxProps> = ({
         fontSize: theme.typography.size.base,
         fontFamily: theme.typography.body,
         color: currentTextColor,
-        ...style,
-      }}
-    >
+        ...style
+      }}>
+      
       <style>{`
         .${cls} { transform: scale(0.4); opacity: 0; transition: transform 0.1s ease, opacity 0.1s ease; }
         .${cls}.is-checked { transform: scale(1); opacity: 1; }
@@ -68,24 +69,24 @@ export const Checkbox: React.FC<CheckboxProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          overflow: 'hidden',
-        }}
-      >
-        {ripples.map((r) => (
-          <span
-            key={r.id}
-            style={{
-              position: 'absolute',
-              inset: 0,
-              borderRadius: '50%',
-              backgroundColor: theme.colors.primary,
-              transform: r.active ? 'scale(1)' : 'scale(0)',
-              opacity: r.exiting ? 0 : 0.45,
-              transition: r.exiting ? 'opacity 300ms ease-out' : 'transform 450ms cubic-bezier(0.4, 0, 0.2, 1)',
-              pointerEvents: 'none',
-            }}
-          />
-        ))}
+          overflow: 'hidden'
+        }}>
+        
+        {ripples.map((r) =>
+        <span
+          key={r.id}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius: '50%',
+            backgroundColor: theme.colors.primary,
+            transform: r.active ? 'scale(1)' : 'scale(0)',
+            opacity: r.exiting ? 0 : 0.45,
+            transition: r.exiting ? 'opacity 300ms ease-out' : 'transform 450ms cubic-bezier(0.4, 0, 0.2, 1)',
+            pointerEvents: 'none'
+          }} />
+
+        )}
 
         <input
           type="checkbox"
@@ -99,10 +100,10 @@ export const Checkbox: React.FC<CheckboxProps> = ({
             height: '100%',
             margin: 0,
             cursor: disabled ? 'not-allowed' : 'pointer',
-            zIndex: 1,
+            zIndex: 1
           }}
-          {...rest}
-        />
+          {...rest} />
+        
 
         <div
           className={`${cls}-box`}
@@ -116,9 +117,9 @@ export const Checkbox: React.FC<CheckboxProps> = ({
             alignItems: 'center',
             justifyContent: 'center',
             transition: 'all 0.15s ease-in-out',
-            boxSizing: 'border-box',
-          }}
-        >
+            boxSizing: 'border-box'
+          }}>
+          
           <svg className={`${cls} ${checked ? 'is-checked' : ''}`} viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#ffffff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12" />
           </svg>
@@ -126,6 +127,6 @@ export const Checkbox: React.FC<CheckboxProps> = ({
       </div>
 
       {label && <span>{label}</span>}
-    </label>
-  );
+    </label>);
+
 };

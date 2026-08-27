@@ -8,6 +8,8 @@ export interface SkeletonProps {
   style?: React.CSSProperties;
 }
 
+
+
 export const Skeleton: React.FC<SkeletonProps> = ({ variant = 'text', width, height, style }) => {
   const theme = useTheme();
   const defaultHeight = variant === 'text' ? '1em' : variant === 'circular' ? '40px' : '80px';
@@ -23,9 +25,9 @@ export const Skeleton: React.FC<SkeletonProps> = ({ variant = 'text', width, hei
         backgroundColor: theme.colors.borderSubtle,
         position: 'relative',
         overflow: 'hidden',
-        ...style,
-      }}
-    >
+        ...style
+      }}>
+      
       <style>{`
         @keyframes ui-skeleton-shimmer { 100% { transform: translateX(100%); } }
       `}</style>
@@ -38,9 +40,9 @@ export const Skeleton: React.FC<SkeletonProps> = ({ variant = 'text', width, hei
           bottom: 0,
           transform: 'translateX(-100%)',
           backgroundImage: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)',
-          animation: 'ui-skeleton-shimmer 1.6s infinite',
-        }}
-      />
-    </div>
-  );
+          animation: 'ui-skeleton-shimmer 1.6s infinite'
+        }} />
+      
+    </div>);
+
 };

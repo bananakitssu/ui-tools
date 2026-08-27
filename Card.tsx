@@ -3,6 +3,7 @@ import { Paper, type PaperElevation } from './Paper';
 import { Typography } from './Typography';
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+
   title?: string;
   elevation?: 'flat' | 'card' | 'modal';
   variant?: 'elevation' | 'outlined';
@@ -12,8 +13,10 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 const elevationMap: Record<'flat' | 'card' | 'modal', PaperElevation> = {
   flat: 0,
   card: 2,
-  modal: 4,
+  modal: 4
 };
+
+
 
 export const Card: React.FC<CardProps> = ({
   title,
@@ -25,12 +28,12 @@ export const Card: React.FC<CardProps> = ({
 }) => {
   return (
     <Paper elevation={elevationMap[elevation]} variant={variant} style={{ padding: '20px', ...style }} {...rest}>
-      {title && (
-        <Typography variant="h4" style={{ marginBottom: children ? '12px' : 0 }}>
+      {title &&
+      <Typography variant="h4" style={{ marginBottom: children ? '12px' : 0 }}>
           {title}
         </Typography>
-      )}
+      }
       {children}
-    </Paper>
-  );
+    </Paper>);
+
 };

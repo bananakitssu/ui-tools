@@ -11,6 +11,9 @@ export interface BackdropProps {
 const ENTER_DURATION = 225;
 const EXIT_DURATION = 195;
 
+
+
+
 export const Backdrop: React.FC<BackdropProps> = ({ open, children, onClick, style }) => {
   const [shouldRender, setShouldRender] = useState(open);
   const [visible, setVisible] = useState(false);
@@ -49,10 +52,10 @@ export const Backdrop: React.FC<BackdropProps> = ({ open, children, onClick, sty
         color: '#ffffff',
         opacity: visible ? 1 : 0,
         transition: `opacity ${visible ? ENTER_DURATION : EXIT_DURATION}ms ease`,
-        ...style,
-      }}
-    >
+        ...style
+      }}>
+      
       {children ?? <CircularProgress color="#ffffff" trackColor="rgba(255,255,255,0.3)" />}
-    </div>
-  );
+    </div>);
+
 };

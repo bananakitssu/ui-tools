@@ -1,7 +1,7 @@
 # UI Tools
 
 <p align="center">
-  <img alt="version" src="https://img.shields.io/badge/version-v0.1.8-green?style=for-the-badge" />
+  <img alt="version" src="https://img.shields.io/badge/version-v0.1.9-green?style=for-the-badge" />
   <img alt="version type" src="https://img.shields.io/badge/version_type-BETA-yellow?style=for-the-badge" />
   <img alt="license" src="https://img.shields.io/github/license/bananakitssu/ui-tools?style=for-the-badge" />
   <img alt="downloads" src="https://img.shields.io/npm/dm/@bananacool467/ui-tools?style=for-the-badge" />
@@ -46,3 +46,28 @@ npm run build
 
 > [!NOTE]
 > Documentation coming soon. Instead of reading a documentation, you can read the component files in `src/` in GitHub, or `dist/` in NPM.
+
+## Terminal
+
+The terminal server requires an authentication token. It rejects missing or
+incorrect credentials before creating a WebSocket connection or spawning a
+PTY:
+
+```ts
+const terminalHandler = await useTerminal({
+  token: process.env.TERMINAL_TOKEN,
+});
+
+app.get("/terminal-stream", terminalHandler);
+```
+
+Pass the same token to the browser component:
+
+```tsx
+<Terminal token={terminalToken} />
+```
+
+The browser sends the token through a WebSocket subprotocol, not a URL query
+parameter. Do not expose a long-lived token in a public application; use an
+authenticated application session or a short-lived credential for public
+terminals.

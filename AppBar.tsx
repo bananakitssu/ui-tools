@@ -2,11 +2,14 @@ import React from 'react';
 import { useTheme } from './theme';
 
 export interface AppBarProps extends React.HTMLAttributes<HTMLElement> {
+
   position?: 'static' | 'sticky' | 'fixed';
   color?: 'primary' | 'surface';
   elevation?: boolean;
   children?: React.ReactNode;
 }
+
+
 
 export const AppBar: React.FC<AppBarProps> = ({
   position = 'static',
@@ -36,19 +39,21 @@ export const AppBar: React.FC<AppBarProps> = ({
         boxShadow: elevation ? theme.shadow.card : 'none',
         fontFamily: theme.typography.body,
         boxSizing: 'border-box',
-        ...style,
+        ...style
       }}
-      {...rest}
-    >
+      {...rest}>
+      
       {children}
-    </header>
-  );
+    </header>);
+
 };
 
 export interface AppBarTitleProps {
   children?: React.ReactNode;
   style?: React.CSSProperties;
 }
+
+
 
 export const AppBarTitle: React.FC<AppBarTitleProps> = ({ children, style }) => {
   const theme = useTheme();
@@ -59,10 +64,10 @@ export const AppBarTitle: React.FC<AppBarTitleProps> = ({ children, style }) => 
         fontWeight: theme.typography.weight.bold,
         fontFamily: theme.typography.display,
         flex: 1,
-        ...style,
-      }}
-    >
+        ...style
+      }}>
+      
       {children}
-    </span>
-  );
+    </span>);
+
 };

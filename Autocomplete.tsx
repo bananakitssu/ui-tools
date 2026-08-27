@@ -15,6 +15,9 @@ export interface AutocompleteProps {
   style?: React.CSSProperties;
 }
 
+
+
+
 export const Autocomplete: React.FC<AutocompleteProps> = ({ label, options, value, onChange, placeholder = 'Search...', style }) => {
   const theme = useTheme();
   const [inputValue, setInputValue] = useState('');
@@ -30,7 +33,7 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({ label, options, valu
   }, [selectedOption, isOpen]);
 
   const filteredOptions = useMemo(() => {
-    if (!inputValue || (selectedOption && inputValue === selectedOption.label)) return options;
+    if (!inputValue || selectedOption && inputValue === selectedOption.label) return options;
     return options.filter((o) => o.label.toLowerCase().includes(inputValue.toLowerCase()));
   }, [inputValue, options, selectedOption]);
 
@@ -70,11 +73,11 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({ label, options, valu
 
   return (
     <div ref={containerRef} style={{ position: 'relative', width: '100%', maxWidth: '300px', fontFamily: theme.typography.body, ...style }}>
-      {label && (
-        <label style={{ fontSize: theme.typography.size.sm, fontWeight: theme.typography.weight.semibold, fontFamily: theme.typography.display, color: theme.colors.ink, display: 'block', marginBottom: '6px' }}>
+      {label &&
+      <label style={{ fontSize: theme.typography.size.sm, fontWeight: theme.typography.weight.semibold, fontFamily: theme.typography.display, color: theme.colors.ink, display: 'block', marginBottom: '6px' }}>
           {label}
         </label>
-      )}
+      }
       <input
         ref={inputRef}
         value={inputValue}
@@ -99,74 +102,74 @@ export const Autocomplete: React.FC<AutocompleteProps> = ({ label, options, valu
           fontSize: theme.typography.size.base,
           color: theme.colors.ink,
           outline: 'none',
-          fontFamily: 'inherit',
-        }}
-      />
-      {isOpen && filteredOptions.length > 0 && (
-        <ul
-          role="listbox"
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 6px)',
-            left: 0,
-            right: 0,
-            backgroundColor: theme.colors.surface,
-            border: `1px solid ${theme.colors.borderSubtle}`,
-            borderRadius: theme.radii.md,
-            boxShadow: theme.shadow.dropdown,
-            listStyle: 'none',
-            padding: '6px',
-            margin: 0,
-            zIndex: 100,
-            maxHeight: '220px',
-            overflowY: 'auto',
+          fontFamily: 'inherit'
+        }} />
+      
+      {isOpen && filteredOptions.length > 0 &&
+      <ul
+        role="listbox"
+        style={{
+          position: 'absolute',
+          top: 'calc(100% + 6px)',
+          left: 0,
+          right: 0,
+          backgroundColor: theme.colors.surface,
+          border: `1px solid ${theme.colors.borderSubtle}`,
+          borderRadius: theme.radii.md,
+          boxShadow: theme.shadow.dropdown,
+          listStyle: 'none',
+          padding: '6px',
+          margin: 0,
+          zIndex: 100,
+          maxHeight: '220px',
+          overflowY: 'auto'
+        }}>
+        
+          {filteredOptions.map((option, index) =>
+        <li
+          key={option.value}
+          role="option"
+          aria-selected={option.value === value}
+          onMouseEnter={() => setHighlightedIndex(index)}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            selectOption(option);
           }}
-        >
-          {filteredOptions.map((option, index) => (
-            <li
-              key={option.value}
-              role="option"
-              aria-selected={option.value === value}
-              onMouseEnter={() => setHighlightedIndex(index)}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                selectOption(option);
-              }}
-              style={{
-                padding: '9px 12px',
-                fontSize: theme.typography.size.sm,
-                color: theme.colors.ink,
-                borderRadius: '7px',
-                backgroundColor: index === highlightedIndex ? theme.colors.primaryLight : 'transparent',
-                fontWeight: option.value === value ? theme.typography.weight.semibold : theme.typography.weight.regular,
-                cursor: 'pointer',
-              }}
-            >
+          style={{
+            padding: '9px 12px',
+            fontSize: theme.typography.size.sm,
+            color: theme.colors.ink,
+            borderRadius: '7px',
+            backgroundColor: index === highlightedIndex ? theme.colors.primaryLight : 'transparent',
+            fontWeight: option.value === value ? theme.typography.weight.semibold : theme.typography.weight.regular,
+            cursor: 'pointer'
+          }}>
+          
               {option.label}
             </li>
-          ))}
+        )}
         </ul>
-      )}
-      {isOpen && filteredOptions.length === 0 && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 6px)',
-            left: 0,
-            right: 0,
-            backgroundColor: theme.colors.surface,
-            border: `1px solid ${theme.colors.borderSubtle}`,
-            borderRadius: theme.radii.md,
-            boxShadow: theme.shadow.dropdown,
-            padding: '12px',
-            color: theme.colors.textMuted,
-            fontSize: theme.typography.size.sm,
-            zIndex: 100,
-          }}
-        >
+      }
+      {isOpen && filteredOptions.length === 0 &&
+      <div
+        style={{
+          position: 'absolute',
+          top: 'calc(100% + 6px)',
+          left: 0,
+          right: 0,
+          backgroundColor: theme.colors.surface,
+          border: `1px solid ${theme.colors.borderSubtle}`,
+          borderRadius: theme.radii.md,
+          boxShadow: theme.shadow.dropdown,
+          padding: '12px',
+          color: theme.colors.textMuted,
+          fontSize: theme.typography.size.sm,
+          zIndex: 100
+        }}>
+        
           No options found
         </div>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 };

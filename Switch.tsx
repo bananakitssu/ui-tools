@@ -38,9 +38,9 @@ export const Switch: React.FC<SwitchProps> = ({ label, labelColor, checked, disa
         fontSize: theme.typography.size.base,
         fontFamily: theme.typography.body,
         color: currentTextColor,
-        ...style,
-      }}
-    >
+        ...style
+      }}>
+      
       <div
         onPointerDown={handlePointerDown}
         onPointerUp={endRipple}
@@ -56,24 +56,24 @@ export const Switch: React.FC<SwitchProps> = ({ label, labelColor, checked, disa
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          overflow: 'hidden',
-        }}
-      >
-        {ripples.map((r) => (
-          <span
-            key={r.id}
-            style={{
-              position: 'absolute',
-              inset: 0,
-              borderRadius: '50%',
-              backgroundColor: theme.colors.primary,
-              transform: r.active ? 'scale(1)' : 'scale(0)',
-              opacity: r.exiting ? 0 : 0.35,
-              transition: r.exiting ? 'opacity 300ms ease-out' : 'transform 450ms cubic-bezier(0.4, 0, 0.2, 1)',
-              pointerEvents: 'none',
-            }}
-          />
-        ))}
+          overflow: 'hidden'
+        }}>
+        
+        {ripples.map((r) =>
+        <span
+          key={r.id}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius: '50%',
+            backgroundColor: theme.colors.primary,
+            transform: r.active ? 'scale(1)' : 'scale(0)',
+            opacity: r.exiting ? 0 : 0.35,
+            transition: r.exiting ? 'opacity 300ms ease-out' : 'transform 450ms cubic-bezier(0.4, 0, 0.2, 1)',
+            pointerEvents: 'none'
+          }} />
+
+        )}
 
         <input
           type="checkbox"
@@ -81,8 +81,8 @@ export const Switch: React.FC<SwitchProps> = ({ label, labelColor, checked, disa
           disabled={disabled}
           onChange={onChange}
           style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', margin: 0, cursor: disabled ? 'not-allowed' : 'pointer', zIndex: 1 }}
-          {...rest}
-        />
+          {...rest} />
+        
 
         <div
           style={{
@@ -92,9 +92,9 @@ export const Switch: React.FC<SwitchProps> = ({ label, labelColor, checked, disa
             backgroundColor: disabled ? theme.colors.borderSubtle : checked ? theme.colors.primary : theme.colors.border,
             position: 'relative',
             transition: 'background-color 0.15s ease',
-            flexShrink: 0,
-          }}
-        >
+            flexShrink: 0
+          }}>
+          
           <div
             style={{
               position: 'absolute',
@@ -105,13 +105,13 @@ export const Switch: React.FC<SwitchProps> = ({ label, labelColor, checked, disa
               borderRadius: '50%',
               backgroundColor: '#ffffff',
               boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-              transition: 'left 0.15s ease',
-            }}
-          />
+              transition: 'left 0.15s ease'
+            }} />
+          
         </div>
       </div>
 
       {label && <span>{label}</span>}
-    </label>
-  );
+    </label>);
+
 };

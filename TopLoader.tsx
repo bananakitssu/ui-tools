@@ -14,7 +14,7 @@ const bgKeyMap: Record<string, keyof Theme['colors']> = {
   primary: 'primary',
   secondary: 'accent',
   surface: 'surface',
-  surfaceSunken: 'surfaceSunken',
+  surfaceSunken: 'surfaceSunken'
 };
 
 export const TopLoader: React.FC<LoaderProps> = ({
@@ -30,15 +30,18 @@ export const TopLoader: React.FC<LoaderProps> = ({
   const bgValue = bgKey ? theme.colors[bgKey] : bgcolor;
 
   useEffect(() => {
+
     const navigationEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
     const navType = navigationEntries[0]?.type;
-    
+
     const wasLoading = sessionStorage.getItem("is_navigating");
+
+
 
     if (wasLoading === "true" && navType === "navigate") {
       setVisible(true);
       setProgress(90);
-      
+
       sessionStorage.removeItem("is_navigating");
 
       const endTimeout = setTimeout(() => {
@@ -49,6 +52,7 @@ export const TopLoader: React.FC<LoaderProps> = ({
 
       return () => clearTimeout(endTimeout);
     } else {
+
       sessionStorage.removeItem("is_navigating");
     }
   }, []);
@@ -61,17 +65,17 @@ export const TopLoader: React.FC<LoaderProps> = ({
       const link = target.closest("a");
 
       if (
-        link &&
-        link.href &&
-        !link.target &&
-        !link.href.startsWith("#") &&
-        link.origin === window.location.origin &&
-        link.href !== window.location.href
-      ) {
+      link &&
+      link.href &&
+      !link.target &&
+      !link.href.startsWith("#") &&
+      link.origin === window.location.origin &&
+      link.href !== window.location.href)
+      {
         if (intervalId) clearInterval(intervalId);
 
         sessionStorage.setItem("is_navigating", "true");
-        
+
         setVisible(true);
         setProgress(15);
 
@@ -112,7 +116,7 @@ export const TopLoader: React.FC<LoaderProps> = ({
         pointerEvents: "none",
         ...style
       }}
-      {...rest}
-    />
-  );
-}
+      {...rest} />);
+
+
+};

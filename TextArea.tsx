@@ -9,6 +9,8 @@ export interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextArea
   activeColor?: string;
 }
 
+
+
 export const TextArea: React.FC<TextAreaProps> = ({
   label,
   error = false,
@@ -31,6 +33,8 @@ export const TextArea: React.FC<TextAreaProps> = ({
   const uid = useId().replace(/[:]/g, '');
 
   const currentValue = value !== undefined ? value : internalValue;
+
+
   const isFloated = isFocused || Boolean(currentValue) || Boolean(placeholder);
 
   const handleFocus = (e: React.FocusEvent<HTMLTextAreaElement>) => {
@@ -71,9 +75,9 @@ export const TextArea: React.FC<TextAreaProps> = ({
           backgroundColor: theme.colors.surface,
           border: `${isFocused ? '2px' : '1px'} solid ${currentBorderColor}`,
           borderRadius: theme.radii.md,
-          transition: 'border-color 0.15s ease',
-        }}
-      >
+          transition: 'border-color 0.15s ease'
+        }}>
+        
         <label
           htmlFor={uid}
           style={{
@@ -87,9 +91,9 @@ export const TextArea: React.FC<TextAreaProps> = ({
             color: currentLabelColor,
             fontWeight: theme.typography.weight.medium,
             transition: 'all 0.18s cubic-bezier(0.0, 0, 0.2, 1)',
-            zIndex: 1,
-          }}
-        >
+            zIndex: 1
+          }}>
+          
           {label}
         </label>
 
@@ -116,24 +120,24 @@ export const TextArea: React.FC<TextAreaProps> = ({
             outline: 'none',
             borderRadius: theme.radii.md,
             boxSizing: 'border-box',
-            resize: 'vertical',
+            resize: 'vertical'
           }}
-          {...rest}
-        />
+          {...rest} />
+        
       </div>
 
-      {helperText && (
-        <span
-          style={{
-            fontSize: theme.typography.size.xs,
-            color: error ? theme.colors.error : theme.colors.textMuted,
-            marginTop: '4px',
-            marginLeft: '14px',
-          }}
-        >
+      {helperText &&
+      <span
+        style={{
+          fontSize: theme.typography.size.xs,
+          color: error ? theme.colors.error : theme.colors.textMuted,
+          marginTop: '4px',
+          marginLeft: '14px'
+        }}>
+        
           {helperText}
         </span>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 };

@@ -1,12 +1,18 @@
 import React from 'react';
 
 export interface GridProps extends React.HTMLAttributes<HTMLDivElement> {
+
   container?: boolean;
+
   span?: number;
+
   columns?: number;
+
   spacing?: number | string;
   children?: React.ReactNode;
 }
+
+
 
 export const Grid: React.FC<GridProps> = ({
   container = false,
@@ -26,13 +32,13 @@ export const Grid: React.FC<GridProps> = ({
           display: 'grid',
           gridTemplateColumns: `repeat(${columns}, 1fr)`,
           gap,
-          ...style,
+          ...style
         }}
-        {...rest}
-      >
+        {...rest}>
+        
         {children}
-      </div>
-    );
+      </div>);
+
   }
 
   return (
@@ -40,11 +46,11 @@ export const Grid: React.FC<GridProps> = ({
       style={{
         gridColumn: span ? `span ${span} / span ${span}` : undefined,
         minWidth: 0,
-        ...style,
+        ...style
       }}
-      {...rest}
-    >
+      {...rest}>
+      
       {children}
-    </div>
-  );
+    </div>);
+
 };

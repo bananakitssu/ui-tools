@@ -30,6 +30,9 @@ export const Input: React.FC<InputProps> = ({
   const uid = useId().replace(/[:]/g, '');
 
   const currentValue = value !== undefined ? value : internalValue;
+
+
+
   const isFloated = isFocused || Boolean(currentValue) || Boolean(placeholder);
 
   const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -70,9 +73,9 @@ export const Input: React.FC<InputProps> = ({
           backgroundColor: theme.colors.surface,
           border: `${isFocused ? '2px' : '1px'} solid ${currentBorderColor}`,
           borderRadius: theme.radii.md,
-          transition: 'border-color 0.15s ease',
-        }}
-      >
+          transition: 'border-color 0.15s ease'
+        }}>
+        
         <label
           htmlFor={uid}
           style={{
@@ -85,9 +88,9 @@ export const Input: React.FC<InputProps> = ({
             color: currentLabelColor,
             fontWeight: theme.typography.weight.medium,
             transition: 'all 0.18s cubic-bezier(0.0, 0, 0.2, 1)',
-            zIndex: 1,
-          }}
-        >
+            zIndex: 1
+          }}>
+          
           {label}
         </label>
 
@@ -111,24 +114,24 @@ export const Input: React.FC<InputProps> = ({
             outline: 'none',
             borderRadius: theme.radii.md,
             boxSizing: 'border-box',
-            transition: 'padding 0.18s ease',
+            transition: 'padding 0.18s ease'
           }}
-          {...rest}
-        />
+          {...rest} />
+        
       </div>
 
-      {helperText && (
-        <span
-          style={{
-            fontSize: theme.typography.size.xs,
-            color: error ? theme.colors.error : theme.colors.textMuted,
-            marginTop: '4px',
-            marginLeft: '14px',
-          }}
-        >
+      {helperText &&
+      <span
+        style={{
+          fontSize: theme.typography.size.xs,
+          color: error ? theme.colors.error : theme.colors.textMuted,
+          marginTop: '4px',
+          marginLeft: '14px'
+        }}>
+        
           {helperText}
         </span>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 };

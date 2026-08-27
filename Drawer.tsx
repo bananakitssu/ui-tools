@@ -13,6 +13,8 @@ export interface DrawerProps {
 const ENTER_DURATION = 225;
 const EXIT_DURATION = 195;
 
+
+
 export const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, anchor = 'left', children, style }) => {
   const theme = useTheme();
   const [isMounted, setIsMounted] = useState(false);
@@ -44,6 +46,9 @@ export const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, anchor = 'left'
     }
   }, [isOpen]);
 
+
+
+
   useEffect(() => {
     if (!shouldRender || !isMounted) return;
     const originalOverflow = document.body.style.overflow;
@@ -64,7 +69,7 @@ export const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, anchor = 'left'
 
   const isHorizontal = anchor === 'left' || anchor === 'right';
   const hiddenTransform =
-    anchor === 'left' ? 'translateX(-100%)' : anchor === 'right' ? 'translateX(100%)' : anchor === 'top' ? 'translateY(-100%)' : 'translateY(100%)';
+  anchor === 'left' ? 'translateX(-100%)' : anchor === 'right' ? 'translateX(100%)' : anchor === 'top' ? 'translateY(-100%)' : 'translateY(100%)';
 
   return createPortal(
     <div
@@ -81,9 +86,9 @@ export const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, anchor = 'left'
         zIndex: 9999,
         display: 'flex',
         justifyContent: anchor === 'right' ? 'flex-end' : anchor === 'left' ? 'flex-start' : 'stretch',
-        alignItems: anchor === 'bottom' ? 'flex-end' : anchor === 'top' ? 'flex-start' : 'stretch',
-      }}
-    >
+        alignItems: anchor === 'bottom' ? 'flex-end' : anchor === 'top' ? 'flex-start' : 'stretch'
+      }}>
+      
       <div
         ref={drawerRef}
         role="dialog"
@@ -97,13 +102,13 @@ export const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, anchor = 'left'
           maxHeight: !isHorizontal ? '80vh' : undefined,
           overflow: 'auto',
           transform: visible ? 'translate(0, 0)' : hiddenTransform,
-          transition: visible
-            ? `transform ${ENTER_DURATION}ms cubic-bezier(0.0, 0, 0.2, 1)`
-            : `transform ${EXIT_DURATION}ms cubic-bezier(0.4, 0, 1, 1)`,
+          transition: visible ?
+          `transform ${ENTER_DURATION}ms cubic-bezier(0.0, 0, 0.2, 1)` :
+          `transform ${EXIT_DURATION}ms cubic-bezier(0.4, 0, 1, 1)`,
           fontFamily: theme.typography.body,
-          ...style,
-        }}
-      >
+          ...style
+        }}>
+        
         {children}
       </div>
     </div>,

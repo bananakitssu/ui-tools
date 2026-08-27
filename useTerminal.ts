@@ -15,51 +15,56 @@ export interface UseTerminalOptions {
   shell?: string;
   shellArgs?: string[];
   maxHistory?: number;
-  token?: string;
+  token: string | undefined;
 }
 
 export type TerminalHandler = (
-  req: IncomingMessage,
-  res: ServerResponse,
-  next?: () => void,
-) => void;
+req: IncomingMessage,
+res: ServerResponse,
+next?: () => void)
+=> void;
 
-export function useTerminal(token?: string): Promise<TerminalHandler | undefined>;
 export function useTerminal(
-  options?: UseTerminalOptions,
-): Promise<TerminalHandler | undefined>;
+options: UseTerminalOptions)
+: Promise<TerminalHandler | undefined>;
 export async function useTerminal(
-  tokenOrOptions: string | UseTerminalOptions = {},
-): Promise<TerminalHandler | undefined> {
+options: UseTerminalOptions | undefined = undefined)
+: Promise<TerminalHandler | undefined> {
+  const configuredToken = options?.token;
+  if (
+  typeof configuredToken !== "string" ||
+  configuredToken.length === 0)
+  {
+    throw new Error(
+      "useTerminal requires an authentication token. " +
+      'Use useTerminal({ token: process.env.TERMINAL_TOKEN }).'
+    );
+  }
+
   if (!isNode) {
     console.warn("useTerminal must be called in a Node.js environment");
     return undefined;
   }
 
   const [
-    { WebSocketServer },
-    ptyModule,
-    osModule,
-    cryptoModule,
-  ] = await Promise.all([
-    import("ws"),
-    import("@lydell/node-pty"),
-    import("os"),
-    import("crypto"),
-  ]);
-
-  const options: UseTerminalOptions =
-    typeof tokenOrOptions === "string"
-      ? { token: tokenOrOptions }
-      : tokenOrOptions;
+  { WebSocketServer },
+  ptyModule,
+  osModule,
+  cryptoModule] =
+  await Promise.all([
+  import("ws"),
+  import("@lydell/node-pty"),
+  import("os"),
+  import("crypto")]
+  );
 
   const {
     path = "/terminal-stream",
     shell = process.platform === "win32" ? "powershell.exe" : "bash",
     shellArgs = shell === "bash" ? ["-i"] : [],
-    maxHistory = MAX_HISTORY_LIMIT,
-    token,
-  } = options;
+    maxHistory = MAX_HISTORY_LIMIT
+  } = options!;
+  const token = configuredToken;
 
   const wss = new WebSocketServer({ noServer: true });
   const sessions = new Map<string, TerminalSession>();
@@ -72,12 +77,45 @@ export async function useTerminal(
 
     return (
       providedBytes.length === expectedBytes.length &&
-      cryptoModule.timingSafeEqual(providedBytes, expectedBytes)
-    );
+      cryptoModule.timingSafeEqual(providedBytes, expectedBytes));
+
+  };
+
+  const getSubprotocolToken = (req: IncomingMessage): string | null => {
+    const protocolHeader = req.headers["sec-websocket-protocol"];
+    const headerValue = Array.isArray(protocolHeader) ?
+    protocolHeader.join(",") :
+    protocolHeader;
+    if (!headerValue) return null;
+
+    const tokenProtocol = headerValue.
+    split(",").
+    map((protocol) => protocol.trim()).
+    find((protocol) => protocol.startsWith("terminal-token."));
+    if (!tokenProtocol) return null;
+
+    const encodedToken = tokenProtocol.slice("terminal-token.".length);
+    if (!encodedToken) return null;
+
+    try {
+      const base64 = encodedToken.
+      replace(/-/g, "+").
+      replace(/_/g, "/").
+      padEnd(Math.ceil(encodedToken.length / 4) * 4, "=");
+      return Buffer.from(base64, "base64").toString("utf8");
+    } catch (_) {
+      return null;
+    }
   };
 
   wss.on("connection", (ws: any) => {
     let clientSessionId: string | null = null;
+
+    const heartbeat = setInterval(() => {
+      if (ws.readyState === ws.OPEN) {
+        ws.ping();
+      }
+    }, 30000);
 
     ws.on("message", (message: any) => {
       try {
@@ -110,13 +148,13 @@ export async function useTerminal(
               cols: cols || 29,
               rows: rows || 8,
               cwd: process.env.HOME || osModule.homedir(),
-              env: { ...process.env, TERM: "xterm-256color" },
+              env: { ...process.env, TERM: "xterm-256color" }
             });
 
             setTimeout(() => {
               if (shell === "bash") {
                 ptyProcess.write(
-                  'export PS1="\\[\\e[1;36m\\]\\w\\[\\e[0m\\] \\[\\e[1;32m\\]\\$\\[\\e[0m\\] "; clear\r',
+                  'export PS1="\\[\\e[1;36m\\]\\w\\[\\e[0m\\] \\[\\e[1;32m\\]\\$\\[\\e[0m\\] "; clear\r'
                 );
               } else if (shell === "powershell.exe") {
                 ptyProcess.write('function prompt { "PS $(get-location)> " }; clear\r');
@@ -127,7 +165,7 @@ export async function useTerminal(
               ptyProcess,
               ws,
               cleanupTimeout: null,
-              history: "",
+              history: ""
             };
             sessions.set(newSessionId, sessionState);
 
@@ -137,8 +175,8 @@ export async function useTerminal(
                   JSON.stringify({
                     type: "exit",
                     code: event.exitCode,
-                    signal: event.signal,
-                  }),
+                    signal: event.signal
+                  })
                 );
               }
               sessions.delete(newSessionId);
@@ -151,7 +189,7 @@ export async function useTerminal(
               current.history += data;
               if (current.history.length > maxHistory) {
                 current.history = current.history.slice(
-                  current.history.length - maxHistory,
+                  current.history.length - maxHistory
                 );
               }
 
@@ -189,6 +227,7 @@ export async function useTerminal(
     });
 
     ws.on("close", () => {
+      clearInterval(heartbeat);
       if (!clientSessionId || !sessions.has(clientSessionId)) return;
 
       const session = sessions.get(clientSessionId)!;
@@ -197,6 +236,7 @@ export async function useTerminal(
         try {
           session.ptyProcess.kill();
         } catch (_) {
+
         }
         sessions.delete(clientSessionId!);
       }, 10 * 60 * 1000);
@@ -210,7 +250,7 @@ export async function useTerminal(
   return (req, res, next) => {
     const requestUrl = new URL(req.url || "/", "http://localhost");
     const isWebSocketUpgrade =
-      req.headers.upgrade?.toLowerCase() === "websocket";
+    req.headers.upgrade?.toLowerCase() === "websocket";
 
     if (requestUrl.pathname !== path || !isWebSocketUpgrade) {
       if (next) {
@@ -223,16 +263,17 @@ export async function useTerminal(
     }
 
     const authorization = req.headers.authorization;
-    const bearerToken = authorization?.startsWith("Bearer ")
-      ? authorization.slice("Bearer ".length)
-      : null;
-    const providedToken =
-      requestUrl.searchParams.get("token") || bearerToken;
+    const bearerToken = authorization?.startsWith("Bearer ") ?
+    authorization.slice("Bearer ".length) :
+    null;
+    const providedToken = getSubprotocolToken(req) || bearerToken;
 
-    if (token && !tokensMatch(providedToken, token)) {
+
+
+    if (!tokensMatch(providedToken, token)) {
       res.writeHead(401, {
         "Content-Type": "text/plain",
-        Connection: "close",
+        Connection: "close"
       });
       res.end("Unauthorized");
       return;

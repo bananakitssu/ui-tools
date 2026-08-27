@@ -4,6 +4,7 @@ import { useTheme } from './theme';
 export interface AccordionProps {
   title: React.ReactNode;
   children?: React.ReactNode;
+
   expanded?: boolean;
   onChange?: (expanded: boolean) => void;
   defaultExpanded?: boolean;
@@ -18,7 +19,7 @@ export const Accordion: React.FC<AccordionProps> = ({
   onChange,
   defaultExpanded = false,
   disabled = false,
-  style,
+  style
 }) => {
   const theme = useTheme();
   const [internalExpanded, setInternalExpanded] = useState(defaultExpanded);
@@ -55,9 +56,9 @@ export const Accordion: React.FC<AccordionProps> = ({
           fontWeight: theme.typography.weight.semibold,
           fontFamily: theme.typography.body,
           color: disabled ? theme.colors.textDisabled : theme.colors.ink,
-          textAlign: 'left',
-        }}
-      >
+          textAlign: 'left'
+        }}>
+        
         <span>{title}</span>
         <svg
           width="18"
@@ -68,8 +69,8 @@ export const Accordion: React.FC<AccordionProps> = ({
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease', flexShrink: 0 }}
-        >
+          style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease', flexShrink: 0 }}>
+          
           <polyline points="6 9 12 15 18 9" />
         </svg>
       </button>
@@ -80,13 +81,13 @@ export const Accordion: React.FC<AccordionProps> = ({
         style={{
           maxHeight: isExpanded ? `${contentRef.current?.scrollHeight ?? 1000}px` : '0px',
           overflow: 'hidden',
-          transition: 'max-height 0.2s ease',
-        }}
-      >
+          transition: 'max-height 0.2s ease'
+        }}>
+        
         <div ref={contentRef} style={{ padding: '0 16px 16px', boxSizing: 'border-box', color: theme.colors.ink, fontSize: theme.typography.size.sm }}>
           {children}
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 };

@@ -5,12 +5,21 @@ export interface RippleItem {
   x: number;
   y: number;
   size: number;
+
   active: boolean;
+
   exiting: boolean;
 }
 
+
 const ENTER_DURATION = 450;
 const EXIT_DURATION = 300;
+
+
+
+
+
+
 
 export function useRipple(disabled: boolean = false) {
   const [ripples, setRipples] = useState<RippleItem[]>([]);
@@ -25,7 +34,7 @@ export function useRipple(disabled: boolean = false) {
     const wait = Math.max(ENTER_DURATION - elapsed, 0);
 
     window.setTimeout(() => {
-      setRipples((prev) => prev.map((r) => (r.id === id ? { ...r, exiting: true } : r)));
+      setRipples((prev) => prev.map((r) => r.id === id ? { ...r, exiting: true } : r));
       window.setTimeout(() => {
         setRipples((prev) => prev.filter((r) => r.id !== id));
         activatedAt.current.delete(id);
@@ -40,10 +49,14 @@ export function useRipple(disabled: boolean = false) {
       activeId.current = id;
       setRipples((prev) => [...prev, { id, x, y, size, active: false, exiting: false }]);
 
+
+
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           activatedAt.current.set(id, performance.now());
-          setRipples((prev) => prev.map((r) => (r.id === id ? { ...r, active: true } : r)));
+          setRipples((prev) => prev.map((r) => r.id === id ? { ...r, active: true } : r));
+
+
 
           if (pendingEnd.current.has(id)) {
             pendingEnd.current.delete(id);
@@ -63,6 +76,7 @@ export function useRipple(disabled: boolean = false) {
     if (activatedAt.current.has(id)) {
       scheduleExit(id);
     } else {
+
       pendingEnd.current.add(id);
     }
   }, [scheduleExit]);

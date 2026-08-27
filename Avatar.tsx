@@ -4,8 +4,10 @@ import { useTheme } from './theme';
 export interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
   src?: string;
   alt?: string;
+
   children?: React.ReactNode;
   size?: number | 'small' | 'medium' | 'large';
+
   color?: string;
   variant?: 'circular' | 'rounded' | 'square';
 }
@@ -29,6 +31,8 @@ export const Avatar: React.FC<AvatarProps> = ({
 
   const borderRadius = variant === 'circular' ? '50%' : variant === 'rounded' ? theme.radii.md : 0;
 
+
+
   const fallbackColors = [theme.colors.primary, theme.colors.accent, theme.colors.success, theme.colors.error];
   const initials = typeof children === 'string' ? children : '';
   const colorIndex = initials ? initials.charCodeAt(0) % fallbackColors.length : 0;
@@ -51,20 +55,20 @@ export const Avatar: React.FC<AvatarProps> = ({
         fontSize: `${Math.round(dimension * 0.4)}px`,
         flexShrink: 0,
         userSelect: 'none',
-        ...style,
+        ...style
       }}
-      {...rest}
-    >
-      {showImage ? (
-        <img
-          src={src}
-          alt={alt}
-          onError={() => setImgError(true)}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
-      ) : (
-        children
-      )}
-    </div>
-  );
+      {...rest}>
+      
+      {showImage ?
+      <img
+        src={src}
+        alt={alt}
+        onError={() => setImgError(true)}
+        style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> :
+
+
+      children
+      }
+    </div>);
+
 };

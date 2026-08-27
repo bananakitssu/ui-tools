@@ -44,9 +44,9 @@ export const Radio: React.FC<RadioProps> = ({
         fontSize: theme.typography.size.lg,
         fontFamily: theme.typography.body,
         color: currentTextColor,
-        ...style,
-      }}
-    >
+        ...style
+      }}>
+      
       <style>{`
         .${cls} { transform: scale(0); transition: transform 0.1s ease; }
         .${cls}.is-checked { transform: scale(1); }
@@ -68,24 +68,24 @@ export const Radio: React.FC<RadioProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          overflow: 'hidden',
-        }}
-      >
-        {ripples.map((r) => (
-          <span
-            key={r.id}
-            style={{
-              position: 'absolute',
-              inset: 0,
-              borderRadius: '50%',
-              backgroundColor: theme.colors.primary,
-              transform: r.active ? 'scale(1)' : 'scale(0)',
-              opacity: r.exiting ? 0 : 0.45,
-              transition: r.exiting ? 'opacity 300ms ease-out' : 'transform 450ms cubic-bezier(0.4, 0, 0.2, 1)',
-              pointerEvents: 'none',
-            }}
-          />
-        ))}
+          overflow: 'hidden'
+        }}>
+        
+        {ripples.map((r) =>
+        <span
+          key={r.id}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius: '50%',
+            backgroundColor: theme.colors.primary,
+            transform: r.active ? 'scale(1)' : 'scale(0)',
+            opacity: r.exiting ? 0 : 0.45,
+            transition: r.exiting ? 'opacity 300ms ease-out' : 'transform 450ms cubic-bezier(0.4, 0, 0.2, 1)',
+            pointerEvents: 'none'
+          }} />
+
+        )}
 
         <input
           type="radio"
@@ -99,10 +99,10 @@ export const Radio: React.FC<RadioProps> = ({
             height: '100%',
             margin: 0,
             cursor: disabled ? 'not-allowed' : 'pointer',
-            zIndex: 1,
+            zIndex: 1
           }}
-          {...rest}
-        />
+          {...rest} />
+        
 
         <div
           className={`${cls}-ring`}
@@ -116,22 +116,22 @@ export const Radio: React.FC<RadioProps> = ({
             alignItems: 'center',
             justifyContent: 'center',
             transition: 'border-color 0.15s ease-in-out',
-            boxSizing: 'border-box',
-          }}
-        >
+            boxSizing: 'border-box'
+          }}>
+          
           <div
             className={`${cls} ${checked ? 'is-checked' : ''}`}
             style={{
               width: '9px',
               height: '9px',
               borderRadius: '50%',
-              backgroundColor: disabled ? theme.colors.textDisabled : theme.colors.primary,
-            }}
-          />
+              backgroundColor: disabled ? theme.colors.textDisabled : theme.colors.primary
+            }} />
+          
         </div>
       </div>
 
       {label && <span>{label}</span>}
-    </label>
-  );
+    </label>);
+
 };

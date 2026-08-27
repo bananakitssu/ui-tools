@@ -5,12 +5,15 @@ import { useTheme } from './theme';
 export interface PopoverProps {
   isOpen: boolean;
   onClose: () => void;
+
   anchorRef: React.RefObject<HTMLElement>;
   children: React.ReactNode;
   style?: React.CSSProperties;
 }
 
 const ENTER_DURATION = 150;
+
+
 
 export const Popover: React.FC<PopoverProps> = ({ isOpen, onClose, anchorRef, children, style }) => {
   const theme = useTheme();
@@ -73,9 +76,9 @@ export const Popover: React.FC<PopoverProps> = ({ isOpen, onClose, anchorRef, ch
         transform: visible ? 'scale(1)' : 'scale(0.9)',
         opacity: visible ? 1 : 0,
         transition: `transform ${ENTER_DURATION}ms cubic-bezier(0.0, 0, 0.2, 1), opacity ${ENTER_DURATION}ms ease`,
-        ...style,
-      }}
-    >
+        ...style
+      }}>
+      
       {children}
     </div>,
     document.body

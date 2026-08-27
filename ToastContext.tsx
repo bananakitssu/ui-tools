@@ -8,6 +8,7 @@ export interface Toast {
   message: string;
   type: ToastType;
   duration?: number;
+
   leaving?: boolean;
 }
 
@@ -26,21 +27,26 @@ export const useToast = () => {
   return context;
 };
 
+
+
 const ENTER_DURATION = 225;
 const EXIT_DURATION = 195;
 
 interface ToastItemProps {
   toast: Toast;
-  colors: { bg: string; border: string };
+  colors: {bg: string;border: string;};
   theme: Theme;
   onClose: () => void;
 }
+
+
 
 const ToastItem: React.FC<ToastItemProps> = ({ toast, colors, theme, onClose }) => {
   const [entered, setEntered] = useState(false);
 
   useEffect(() => {
     let raf2 = 0;
+
     const raf1 = requestAnimationFrame(() => {
       raf2 = requestAnimationFrame(() => setEntered(true));
     });
@@ -73,11 +79,11 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, colors, theme, onClose }) 
         fontFamily: theme.typography.body,
         transform: visible ? 'translateX(0)' : 'translateX(110%)',
         opacity: visible ? 1 : 0,
-        transition: visible
-          ? `transform ${ENTER_DURATION}ms cubic-bezier(0.0, 0, 0.2, 1), opacity ${ENTER_DURATION}ms ease`
-          : `transform ${EXIT_DURATION}ms cubic-bezier(0.4, 0, 1, 1), opacity ${EXIT_DURATION}ms ease`,
-      }}
-    >
+        transition: visible ?
+        `transform ${ENTER_DURATION}ms cubic-bezier(0.0, 0, 0.2, 1), opacity ${ENTER_DURATION}ms ease` :
+        `transform ${EXIT_DURATION}ms cubic-bezier(0.4, 0, 1, 1), opacity ${EXIT_DURATION}ms ease`
+      }}>
+      
       <span>{toast.message}</span>
       <button
         onClick={onClose}
@@ -89,37 +95,40 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, colors, theme, onClose }) 
           cursor: 'pointer',
           fontSize: '16px',
           padding: '0 4px',
-          opacity: 0.8,
-        }}
-      >
+          opacity: 0.8
+        }}>
+        
         ✕
       </button>
-    </div>
-  );
+    </div>);
+
 };
 
-export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const ToastProvider: React.FC<{children: React.ReactNode;}> = ({ children }) => {
   const theme = useTheme();
-  const toastColors: Record<ToastType, { bg: string; border: string }> = {
+  const toastColors: Record<ToastType, {bg: string;border: string;}> = {
     success: { bg: theme.colors.success, border: '#7FD9A3' },
     error: { bg: theme.colors.error, border: '#F0A3A7' },
     info: { bg: theme.colors.primary, border: theme.colors.primaryBorder },
-    warning: { bg: '#D97F0A', border: '#FBC97F' },
+    warning: { bg: '#D97F0A', border: '#FBC97F' }
   };
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [isMounted, setIsMounted] = useState(false);
+
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
+
   const purgeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
+
   const removeToast = useCallback(
     (id: string) => {
-      setToasts((prev) => prev.map((toast) => (toast.id === id ? { ...toast, leaving: true } : toast)));
+      setToasts((prev) => prev.map((toast) => toast.id === id ? { ...toast, leaving: true } : toast));
       window.setTimeout(() => purgeToast(id), EXIT_DURATION);
     },
     [purgeToast]
@@ -143,30 +152,31 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     <ToastContext.Provider value={{ addToast, removeToast }}>
       {children}
 
-      {isMounted && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '24px',
-            right: '24px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '10px',
-            zIndex: 9999,
-            pointerEvents: 'none',
-          }}
-        >
-          {toasts.map((toast) => (
-            <ToastItem
-              key={toast.id}
-              toast={toast}
-              colors={toastColors[toast.type]}
-              theme={theme}
-              onClose={() => removeToast(toast.id)}
-            />
-          ))}
+      {}
+      {isMounted &&
+      <div
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+          zIndex: 9999,
+          pointerEvents: 'none'
+        }}>
+        
+          {toasts.map((toast) =>
+        <ToastItem
+          key={toast.id}
+          toast={toast}
+          colors={toastColors[toast.type]}
+          theme={theme}
+          onClose={() => removeToast(toast.id)} />
+
+        )}
         </div>
-      )}
-    </ToastContext.Provider>
-  );
+      }
+    </ToastContext.Provider>);
+
 };

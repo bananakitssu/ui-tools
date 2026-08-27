@@ -5,7 +5,9 @@ import { useRipple } from './useRipple';
 export interface FabProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'small' | 'medium' | 'large';
   color?: 'primary' | 'default';
+
   variant?: 'circular' | 'extended';
+
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'none';
   children?: React.ReactNode;
 }
@@ -66,14 +68,14 @@ export const Fab: React.FC<FabProps> = ({
   const rippleColor = color === 'primary' ? 'rgba(255, 255, 255, 0.45)' : 'rgba(79, 70, 229, 0.25)';
 
   const positionStyles: React.CSSProperties =
-    position === 'none'
-      ? {}
-      : {
-          position: 'fixed',
-          ...(position.includes('bottom') ? { bottom: 24 } : { top: 24 }),
-          ...(position.includes('right') ? { right: 24 } : { left: 24 }),
-          zIndex: 1000,
-        };
+  position === 'none' ?
+  {} :
+  {
+    position: 'fixed',
+    ...(position.includes('bottom') ? { bottom: 24 } : { top: 24 }),
+    ...(position.includes('right') ? { right: 24 } : { left: 24 }),
+    zIndex: 1000
+  };
 
   return (
     <button
@@ -107,31 +109,31 @@ export const Fab: React.FC<FabProps> = ({
         transition: 'box-shadow 0.15s ease, background-color 0.15s ease',
         WebkitTapHighlightColor: 'transparent',
         ...positionStyles,
-        ...style,
+        ...style
       }}
-      {...rest}
-    >
-      {ripples.map((r) => (
-        <span
-          key={r.id}
-          style={{
-            position: 'absolute',
-            left: r.x,
-            top: r.y,
-            width: r.size,
-            height: r.size,
-            borderRadius: '50%',
-            backgroundColor: rippleColor,
-            transform: r.active ? 'scale(1)' : 'scale(0)',
-            opacity: r.exiting ? 0 : 0.45,
-            transition: r.exiting ? 'opacity 300ms ease-out' : 'transform 450ms cubic-bezier(0.4, 0, 0.2, 1)',
-            pointerEvents: 'none',
-          }}
-        />
-      ))}
+      {...rest}>
+      
+      {ripples.map((r) =>
+      <span
+        key={r.id}
+        style={{
+          position: 'absolute',
+          left: r.x,
+          top: r.y,
+          width: r.size,
+          height: r.size,
+          borderRadius: '50%',
+          backgroundColor: rippleColor,
+          transform: r.active ? 'scale(1)' : 'scale(0)',
+          opacity: r.exiting ? 0 : 0.45,
+          transition: r.exiting ? 'opacity 300ms ease-out' : 'transform 450ms cubic-bezier(0.4, 0, 0.2, 1)',
+          pointerEvents: 'none'
+        }} />
+
+      )}
       <span style={{ position: 'relative', zIndex: 1, display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
         {children}
       </span>
-    </button>
-  );
+    </button>);
+
 };

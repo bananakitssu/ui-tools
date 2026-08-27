@@ -7,6 +7,9 @@ export interface TooltipProps {
   placement?: 'top' | 'bottom' | 'left' | 'right';
 }
 
+
+
+
 export const Tooltip: React.FC<TooltipProps> = ({ label, children, placement = 'top' }) => {
   const theme = useTheme();
   const [visible, setVisible] = useState(false);
@@ -37,26 +40,26 @@ export const Tooltip: React.FC<TooltipProps> = ({ label, children, placement = '
   return (
     <span style={{ position: 'relative', display: 'inline-flex' }} onMouseEnter={show} onMouseLeave={hide} onFocus={show} onBlur={hide}>
       {children}
-      {visible && (
-        <span
-          role="tooltip"
-          style={{
-            position: 'absolute',
-            ...positionStyles,
-            backgroundColor: theme.colors.ink,
-            color: '#ffffff',
-            fontSize: theme.typography.size.xs,
-            fontFamily: theme.typography.body,
-            padding: '5px 9px',
-            borderRadius: theme.radii.sm,
-            whiteSpace: 'nowrap',
-            pointerEvents: 'none',
-            zIndex: 10000,
-          }}
-        >
+      {visible &&
+      <span
+        role="tooltip"
+        style={{
+          position: 'absolute',
+          ...positionStyles,
+          backgroundColor: theme.colors.ink,
+          color: '#ffffff',
+          fontSize: theme.typography.size.xs,
+          fontFamily: theme.typography.body,
+          padding: '5px 9px',
+          borderRadius: theme.radii.sm,
+          whiteSpace: 'nowrap',
+          pointerEvents: 'none',
+          zIndex: 10000
+        }}>
+        
           {label}
         </span>
-      )}
-    </span>
-  );
+      }
+    </span>);
+
 };

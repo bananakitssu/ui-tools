@@ -11,9 +11,9 @@ export const List: React.FC<ListProps> = ({ children, disablePadding = false, st
   return (
     <ul
       style={{ listStyle: 'none', margin: 0, padding: disablePadding ? 0 : '8px 0', fontFamily: theme.typography.body, ...style }}
-      {...rest}
-    >
+      {...rest}>
+      
       {children}
-    </ul>
-  );
+    </ul>);
+
 };

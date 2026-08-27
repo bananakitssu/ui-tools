@@ -73,28 +73,28 @@ export const IconButton: React.FC<IconButtonProps> = ({
         justifyContent: 'center',
         cursor: disabled ? 'not-allowed' : 'pointer',
         WebkitTapHighlightColor: 'transparent',
-        ...style,
+        ...style
       }}
-      {...rest}
-    >
-      {ripples.map((r) => (
-        <span
-          key={r.id}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            borderRadius: '50%',
-            backgroundColor: 'currentColor',
-            opacity: r.exiting ? 0 : 0.18,
-            transform: r.active ? 'scale(1)' : 'scale(0)',
-            transition: r.exiting ? 'opacity 300ms ease-out' : 'transform 450ms cubic-bezier(0.4, 0, 0.2, 1)',
-            pointerEvents: 'none',
-          }}
-        />
-      ))}
+      {...rest}>
+      
+      {ripples.map((r) =>
+      <span
+        key={r.id}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: '50%',
+          backgroundColor: 'currentColor',
+          opacity: r.exiting ? 0 : 0.18,
+          transform: r.active ? 'scale(1)' : 'scale(0)',
+          transition: r.exiting ? 'opacity 300ms ease-out' : 'transform 450ms cubic-bezier(0.4, 0, 0.2, 1)',
+          pointerEvents: 'none'
+        }} />
+
+      )}
       <span style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {children}
       </span>
-    </button>
-  );
+    </button>);
+
 };
