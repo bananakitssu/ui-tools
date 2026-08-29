@@ -71,3 +71,79 @@ The browser sends the token through a WebSocket subprotocol, not a URL query
 parameter. Do not expose a long-lived token in a public application; use an
 authenticated application session or a short-lived credential for public
 terminals.
+
+It is recommened to set the terminal restricted only to your localhost, you can use instead:
+```ts
+const terminalHandler = await useTerminal({
+  restrictToLocalhost: true,
+  token: process.env.TERMINAL_TOKEN,
+});
+
+app.get("/terminal-stream", terminalHandler);
+```
+
+Or you can run the terminal inside of a VM (recommended):
+```ts
+const terminalHandler = await useTerminal({
+  startupShell: 'qemu-system-x86_64',
+  startupShellArgs: [
+    /* args for running the OS */
+  ],
+  token: process.env.TERMINAL_TOKEN,
+});
+
+app.get("/terminal-stream", terminalHandler);
+```
+
+You can also setup your own authenticate feature, example:
+```ts
+const terminalHandler = await useTerminal({
+  token: process.env.TERMINAL_TOKEN,
+  authentication: (providedToken, req, res) => {
+    // check cookies for session ids and other stuff
+    return true; /* return false; to reject */
+  }
+});
+
+app.get("/terminal-stream", terminalHandler);
+```
+
+You can also restrict the terminal to some origins:
+```ts
+const terminalHandler = await useTerminal({
+  token: process.env.TERMINAL_TOKEN,
+  strictTerminal: true,
+  allowedOrigins: [
+    "localhost",
+    "127.0.0.1"
+  ]
+});
+
+app.get("/terminal-stream", terminalHandler);
+```
+
+You can also restrict access to your process's ENV:
+```ts
+const terminalHandler = await useTerminal({
+  token: process.env.TERMINAL_TOKEN,
+  strictEnv: true,
+  env: [
+    /* custom env items */
+    "item": "value"
+  ]
+});
+
+app.get("/terminal-stream", terminalHandler);
+```
+
+Or add more to the ENV:
+```ts
+const terminalHandler = await useTerminal({
+  token: process.env.TERMINAL_TOKEN,
+  env: [
+    "session": "123"
+  ]
+});
+
+app.get("/terminal-stream", terminalHandler);
+```

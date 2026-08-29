@@ -12,6 +12,7 @@ export interface TermProps extends React.HTMLAttributes<HTMLElement> {
   width?: number;
   height?: number;
   token?: string;
+  url?: string;
 }
 
 const bgKeyMap: Record<string, keyof Theme['colors']> = {
@@ -173,6 +174,7 @@ export const Terminal: React.FC<TermProps> = ({
   width,
   height,
   token,
+  url,
   ...rest
 }) => {
   const theme = useTheme();
@@ -185,6 +187,7 @@ export const Terminal: React.FC<TermProps> = ({
   const popoverRef = useRef<HTMLDivElement>(null);
   const [restartable, setRestartable] = useState(true);
   const waitingRef = useRef<string[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
   const getGridPosFromPointer = (e: React.PointerEvent | MouseEvent) => {
     if (!canvasRef.current) return null;
     const rect = canvasRef.current.getBoundingClientRect();
@@ -312,6 +315,7 @@ export const Terminal: React.FC<TermProps> = ({
     end: null,
     isSelecting: false
   });
+  const [connectionError, setConnectionError] = useState<string>("");
   const isCellSelected = (x: number, lineIndex: number): boolean => {
     const sel = selectionRef.current;
     if (!sel.start || !sel.end) return false;
@@ -356,7 +360,7 @@ export const Terminal: React.FC<TermProps> = ({
   const CHARACTER_WIDTH = 9.6;
   const CHARACTER_HEIGHT = 18;
   const CONTAINER_WIDTH = width ?? 295;
-  const CONTAINER_HEIGHT = height ?? 380;
+  const CONTAINER_HEIGHT = height ?? 380 - 18 * 2;
 
 
   const ROWS = Math.floor((CONTAINER_HEIGHT - (controls ? 132 : 0) - PADDING) / CHARACTER_HEIGHT);
@@ -755,11 +759,26 @@ export const Terminal: React.FC<TermProps> = ({
     let reconnectTimer: ReturnType<typeof setTimeout>;
     sessionIdRef.current = localStorage.getItem("terminal_session_id");
 
+    const generateAndSaveUserId = () => {
+      const newUserId = crypto.randomUUID();
+      localStorage.setItem("terminal_user_id", newUserId);
+    };
+
+    const getUserId = () => {
+      const storedUserId = localStorage.getItem("terminal_user_id");
+      if (!storedUserId) {
+        generateAndSaveUserId();
+        return localStorage.getItem("terminal_user_id");
+      }
+      return storedUserId;
+    };
+
     const connect = () => {
       if (disposed) return;
       setConnectionState("reconnecting");
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const terminalUrl = `${protocol}//${window.location.host}/terminal-stream`;
+      const terminalUrl = `${protocol}//${window.location.host}${url ?? "/terminal-stream"}`;
+      const wsFetchUrl = `${window.location.protocol}//${window.location.host}${url ?? "/terminal-stream"}`;
       const authProtocols = token ?
       ["terminal-auth", `terminal-token.${encodeToken(token)}`] :
       [];
@@ -772,6 +791,7 @@ export const Terminal: React.FC<TermProps> = ({
           type: "init",
           data: {
             sessionId: sessionIdRef.current,
+            userId: getUserId(),
             cols: COLS,
             rows: ROWS
           }
@@ -794,30 +814,12 @@ export const Terminal: React.FC<TermProps> = ({
                 clearGrid(true);
                 const historyData =
                 payload.history || payload.data || payload.logs || "";
-
-                console.log("HISTORY LENGTH:", historyData.length);
-                console.log(
-                  "HISTORY PREVIEW:",
-                  JSON.stringify(historyData.slice(0, 500))
-                );
                 if (historyData) {
-                  clearGrid(true);
 
                   const chunkSize = 1000;
 
                   for (let i = 0; i < historyData.length; i += chunkSize) {
                     writeToTerminal(historyData.slice(i, i + chunkSize));
-
-                    const nonEmpty = gridRef.current.some((row) =>
-                    row.some((cell) => cell.char !== " ")
-                    );
-
-                    console.log(
-                      `chunk ${i}-${Math.min(i + chunkSize, historyData.length)}:`,
-                      nonEmpty,
-                      "cursor:",
-                      cursorRef.current
-                    );
                   }
 
 
@@ -844,7 +846,7 @@ export const Terminal: React.FC<TermProps> = ({
               }
               processed = true;
             } else if (payload.type === "exit") {
-              const historyData = `\n\r\x1b[31mThe terminal exited.\x1b[33m\n\n\rCODE: ${payload.code}\n\rSIGNAL: ${payload.signal}\x1b[0m`;
+              const historyData = `\n\r\x1b[31mThe terminal exited.\x1b[33m\n\r\n\rCODE: ${payload.code}\n\rSIGNAL: ${payload.signal}\x1b[0m`;
               setRestartable(false);
               if (historyData) {
                 writeToTerminal(historyData);
@@ -855,6 +857,7 @@ export const Terminal: React.FC<TermProps> = ({
                 type: "init",
                 data: {
                   sessionId: sessionIdRef.current,
+                  userId: getUserId(),
                   cols: COLS,
                   rows: ROWS
                 }
@@ -869,14 +872,28 @@ export const Terminal: React.FC<TermProps> = ({
         }
       };
 
-      ws.onclose = () => {
+      ws.onclose = async (event) => {
+        console.log(event.code, event.reason, event.wasClean);
+        if (event.code != 1000) {
+          const fetchTest = await fetch(wsFetchUrl);
+          if (fetchTest.status != 200 && event.code === 1006) {
+            setConnectionState("failed");
+            setConnectionError(`(${fetchTest.status}) ${fetchTest.statusText}`);
+          } else {
+            setConnectionState("failed");
+            setConnectionError(`(${event.code}) ${event.reason}`);
+          }
+          return;
+        }
         if (disposed) return;
         setConnectionState("reconnecting");
         reconnectTimer = setTimeout(connect, 3000);
       };
 
-      ws.onerror = () => {
-        ws.close();
+      ws.onerror = (e) => {
+
+        setConnectionState("failed");
+        setConnectionError(e.toString());
       };
     };
 
@@ -1543,7 +1560,10 @@ export const Terminal: React.FC<TermProps> = ({
 
       ctx.fillStyle = '#ffffff';
       if (scrollThumbSize != scrollThumbSize2) {
+        ctx.save();
+        ctx.globalAlpha = 0.5;
         ctx.fillRect(CONTAINER_WIDTH - (CHARACTER_WIDTH * 2 - CHARACTER_WIDTH / 2) - PADDING, pos, CHARACTER_WIDTH * 2 - CHARACTER_WIDTH / 2, scrollThumbSize);
+        ctx.restore();
       }
 
       const sel = selectionRef.current;
@@ -1752,14 +1772,14 @@ export const Terminal: React.FC<TermProps> = ({
         <RepeatingButton style={buttonStyle(false)} onAction={(e) => {sendKeyStroke("\x1b", true);}} onFocus={forceFocus}>
           ESC
         </RepeatingButton>
+        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\t", true)} onFocus={forceFocus}>
+          TAB
+        </RepeatingButton>
         <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[5~", true)} onFocus={forceFocus}>
           PGUP
         </RepeatingButton>
 
         {}
-        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\t", true)} onFocus={forceFocus}>
-          TAB
-        </RepeatingButton>
         <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[6~", true)} onFocus={forceFocus}>
           PGDN
         </RepeatingButton>
@@ -1768,46 +1788,46 @@ export const Terminal: React.FC<TermProps> = ({
         <Button style={buttonStyle(ctrlPressed)} onPointerDown={(e) => handleToggleClick(e, () => setCtrlPressed(!ctrlPressed))}>
           CTRL
         </Button>
+        <Button style={buttonStyle(altPressed)} onPointerDown={(e) => handleToggleClick(e, () => setAltPressed(!altPressed))}>
+          ALT
+        </Button>
+        <Button style={buttonStyle(shiftPressed)} onPointerDown={(e) => handleToggleClick(e, () => setShiftPressed(!shiftPressed))}>
+          SHFT
+        </Button>
         <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("-")} onFocus={forceFocus}>
           -
         </RepeatingButton>
 
         {}
-        <Button style={buttonStyle(altPressed)} onPointerDown={(e) => handleToggleClick(e, () => setAltPressed(!altPressed))}>
-          ALT
-        </Button>
-        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\\")} onFocus={forceFocus}>
-          \
-        </RepeatingButton>
 
         {}
-        <Button style={buttonStyle(shiftPressed)} onPointerDown={(e) => handleToggleClick(e, () => setShiftPressed(!shiftPressed))}>
-          SHFT
-        </Button>
         <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[A", true)} onFocus={forceFocus}>
           ↑
+        </RepeatingButton>
+        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\\")} onFocus={forceFocus}>
+          \
         </RepeatingButton>
 
         {}
         <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("/")} onFocus={forceFocus}>
           /
         </RepeatingButton>
-        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[D", true)} onFocus={forceFocus}>
-          ←
-        </RepeatingButton>
 
         {}
         <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[H", true)} onFocus={forceFocus}>
           HOME
+        </RepeatingButton>
+        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[F", true)} onFocus={forceFocus}>
+          END
+        </RepeatingButton>
+        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[D", true)} onFocus={forceFocus}>
+          ←
         </RepeatingButton>
         <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[B", true)} onFocus={forceFocus}>
           ↓
         </RepeatingButton>
 
         {}
-        <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[F", true)} onFocus={forceFocus}>
-          END
-        </RepeatingButton>
         <RepeatingButton style={buttonStyle(false)} onAction={() => sendKeyStroke("\x1b[C", true)} onFocus={forceFocus}>
           →
         </RepeatingButton>
@@ -1844,6 +1864,32 @@ export const Terminal: React.FC<TermProps> = ({
 
           }
             Reconnecting...
+          </div>
+        }
+
+        {connectionState != "reconnecting" && connectionState != "connected" &&
+        <div style={{
+          position: "absolute",
+          inset: 0,
+          background: "rgba(10, 10, 10, 0.8)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#ffff55",
+          fontFamily: "monospace",
+          fontSize: "12px",
+          gap: "8px",
+          zIndex: 2,
+          pointerEvents: "none"
+        }}>
+            {
+
+
+
+
+
+          }
+            {"Failed with error: " + connectionError}
           </div>
         }
 
