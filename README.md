@@ -1,7 +1,7 @@
 # UI Tools
 
 <p align="center">
-  <img alt="version" src="https://img.shields.io/badge/version-v0.1.9-green?style=for-the-badge" />
+  <img alt="version" src="https://img.shields.io/badge/version-v0.2.0-green?style=for-the-badge" />
   <img alt="version type" src="https://img.shields.io/badge/version_type-BETA-yellow?style=for-the-badge" />
   <img alt="license" src="https://img.shields.io/github/license/bananakitssu/ui-tools?style=for-the-badge" />
   <img alt="downloads" src="https://img.shields.io/npm/dm/@bananacool467/ui-tools?style=for-the-badge" />
@@ -13,7 +13,7 @@
 </p>
 
 
-Just some UI tools.
+Just some UI tools, for frontend and backend.
 
 Kind of like MUI.
 

@@ -1,12 +1,12 @@
 {
   "dependencies": {
-    "@babel/generator": "^8.0.0",
-    "@babel/parser": "^8.0.4",
     "@lydell/node-pty": "^1.2.0-beta.12",
     "@types/ws": "^8.18.1",
     "ws": "^8.21.0"
   },
   "devDependencies": {
+    "@babel/generator": "^8.0.0",
+    "@babel/parser": "^8.0.4",
     "@bananacool467/authtics-host": "^0.2.5",
     "@bananacool467/pt": "^0.1.0-beta.4",
     "@bananacool467/ui-tools": "file:pack&bananacool467:ui-tools",
@@ -20,8 +20,8 @@
     "typescript7": "npm:typescript@^7.0.2"
   },
   "name": "@bananacool467/ui-tools",
-  "version": "0.1.9-beta",
-  "description": "UI Elements",
+  "version": "0.2.0-beta",
+  "description": "UI Elements + Tools, for frontend and backend",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "repository": "https://github.com/bananakitssu/ui-tools",
