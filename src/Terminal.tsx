@@ -11,7 +11,7 @@ export interface TermProps extends React.HTMLAttributes<HTMLElement> {
   controls?: boolean;
   width?: number;
   height?: number;
-  token?: string;
+  token: string;
   url?: string;
 }
 
@@ -32,6 +32,20 @@ interface SelectionState {
   end: Point | null;
   isSelecting: boolean;
 }
+
+type CredentialType = 'password' | 'string' | 'number';
+
+interface CredentialChallenge {
+  credName: string;
+  credTypes: CredentialType[];
+}
+
+type CredentialStatus =
+"pending" |
+"prompt" |
+"authenticating" |
+"authenticated" |
+"failed";
 
 const encodeToken = (token: string): string => {
   const bytes = new TextEncoder().encode(token);
@@ -286,6 +300,16 @@ export const Terminal: React.FC<TermProps> = ({
   const [inputValue, setInputValue] = useState(' ');
 
   const [connectionState, setConnectionState] = useState<"connected" | "reconnecting" | "failed">("reconnecting");
+  const [credentialStatus, setCredentialStatusState] =
+  useState<CredentialStatus>("pending");
+  const credentialStatusRef = useRef<CredentialStatus>("pending");
+  const [credentialChallenge, setCredentialChallenge] =
+  useState<CredentialChallenge | null>(null);
+  const credentialValueRef = useRef("");
+  const credentialCursorRef = useRef(0);
+  const [credentialValue, setCredentialValue] = useState("");
+  const [credentialCursor, setCredentialCursor] = useState(0);
+  const [credentialError, setCredentialError] = useState("");
   const sessionIdRef = useRef<string | null>(null);
 
   const [ctrlPressed, setCtrlPressedState] = useState(false);
@@ -309,6 +333,28 @@ export const Terminal: React.FC<TermProps> = ({
   const setShiftPressed = (val: boolean) => {
     shiftPressedRef.current = val;
     setShiftPressedState(val);
+  };
+
+  const setCredentialStatus = (status: CredentialStatus) => {
+    credentialStatusRef.current = status;
+    setCredentialStatusState(status);
+  };
+
+  const updateCredentialValue = (nextValue: string, cursor: number) => {
+    credentialValueRef.current = nextValue;
+    credentialCursorRef.current = cursor;
+    setCredentialValue(nextValue);
+    setCredentialCursor(cursor);
+  };
+
+  const resetCredentialPrompt = (challenge: CredentialChallenge) => {
+    credentialValueRef.current = "";
+    credentialCursorRef.current = 0;
+    setCredentialValue("");
+    setCredentialCursor(0);
+    setCredentialChallenge(challenge);
+    setCredentialError("");
+    setCredentialStatus("prompt");
   };
   const selectionRef = useRef<SelectionState>({
     start: null,
@@ -453,6 +499,19 @@ export const Terminal: React.FC<TermProps> = ({
 
     const pastedText = e.clipboardData.getData("text");
     if (!pastedText) return;
+
+    if (credentialStatusRef.current !== "authenticated") {
+      if (credentialStatusRef.current === "prompt") {
+        const current = credentialValueRef.current;
+        const cursor = credentialCursorRef.current;
+        const pastedCredential = pastedText.replace(/\r?\n/g, "");
+        updateCredentialValue(
+          current.slice(0, cursor) + pastedCredential + current.slice(cursor),
+          cursor + pastedCredential.length
+        );
+      }
+      return;
+    }
 
 
     const formattedText = pastedText.replace(/\r?\n/g, "\r\n");
@@ -773,9 +832,22 @@ export const Terminal: React.FC<TermProps> = ({
       return storedUserId;
     };
 
+    const sendInit = (socket: WebSocket) => {
+      socket.send(JSON.stringify({
+        type: "init",
+        data: {
+          sessionId: sessionIdRef.current,
+          userId: getUserId(),
+          cols: COLS,
+          rows: ROWS
+        }
+      }));
+    };
+
     const connect = () => {
       if (disposed) return;
       setConnectionState("reconnecting");
+      setCredentialStatus("pending");
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const terminalUrl = `${protocol}//${window.location.host}${url ?? "/terminal-stream"}`;
       const wsFetchUrl = `${window.location.protocol}//${window.location.host}${url ?? "/terminal-stream"}`;
@@ -787,15 +859,6 @@ export const Terminal: React.FC<TermProps> = ({
 
       ws.onopen = () => {
         setConnectionState("connected");
-        ws.send(JSON.stringify({
-          type: "init",
-          data: {
-            sessionId: sessionIdRef.current,
-            userId: getUserId(),
-            cols: COLS,
-            rows: ROWS
-          }
-        }));
       };
 
       ws.onmessage = (event) => {
@@ -803,7 +866,44 @@ export const Terminal: React.FC<TermProps> = ({
         try {
           const payload = JSON.parse(event.data);
           if (payload && typeof payload === "object") {
-            if (payload.type === "session") {
+            if (payload.type === "credVerify") {
+              const receivedCreds = payload.data?.creds;
+              const receivedChallenge = Array.isArray(receivedCreds) ?
+              receivedCreds[0] :
+              receivedCreds;
+              const challenge: CredentialChallenge = {
+                credName:
+                typeof receivedChallenge?.credName === "string" ?
+                receivedChallenge.credName :
+                "credential",
+                credTypes:
+                Array.isArray(receivedChallenge?.credTypes) &&
+                receivedChallenge.credTypes.length > 0 ?
+                receivedChallenge.credTypes.filter(
+                  (type: unknown): type is CredentialType =>
+                  type === "password" ||
+                  type === "string" ||
+                  type === "number"
+                ) :
+                ["string"]
+              };
+              resetCredentialPrompt(challenge);
+              processed = true;
+            } else if (payload.type === "credFail") {
+              setCredentialError(
+                typeof payload.message === "string" ?
+                payload.message :
+                "Invalid credentials"
+              );
+              updateCredentialValue("", 0);
+              setCredentialStatus("prompt");
+              processed = true;
+            } else if (payload.type === "authReady") {
+              setCredentialError("");
+              setCredentialStatus("authenticated");
+              sendInit(ws);
+              processed = true;
+            } else if (payload.type === "session") {
               sessionIdRef.current = payload.sessionId;
               localStorage.setItem("terminal_session_id", payload.sessionId);
               processed = true;
@@ -906,7 +1006,76 @@ export const Terminal: React.FC<TermProps> = ({
     };
   }, [token]);
 
+  const submitCredential = () => {
+    const socket = wsRef.current;
+    const challenge = credentialChallenge;
+    if (
+    !socket ||
+    socket.readyState !== WebSocket.OPEN ||
+    !challenge ||
+    credentialStatusRef.current !== "prompt")
+    {
+      return;
+    }
+
+    const rawValue = credentialValueRef.current;
+    const isNumberCredential =
+    challenge.credTypes.length === 1 &&
+    challenge.credTypes[0] === "number";
+    const value =
+    isNumberCredential && rawValue.length > 0 ?
+    Number(rawValue) :
+    rawValue;
+
+    setCredentialError("");
+    setCredentialStatus("authenticating");
+    socket.send(JSON.stringify({
+      type: "credVerify",
+      data: [{
+        credName: challenge.credName,
+        credTypes: challenge.credTypes,
+        credValue: value
+      }]
+    }));
+  };
+
+  const handleCredentialKey = (rawKey: string) => {
+    if (credentialStatusRef.current !== "prompt") return;
+
+    const current = credentialValueRef.current;
+    const cursor = credentialCursorRef.current;
+
+    if (rawKey === "\r" || rawKey === "\n") {
+      submitCredential();
+    } else if (rawKey === "\x7f") {
+      if (cursor > 0) {
+        updateCredentialValue(
+          current.slice(0, cursor - 1) + current.slice(cursor),
+          cursor - 1
+        );
+      }
+    } else if (rawKey === "\x1b[D") {
+      updateCredentialValue(current, Math.max(0, cursor - 1));
+    } else if (rawKey === "\x1b[C") {
+      updateCredentialValue(current, Math.min(current.length, cursor + 1));
+    } else if (rawKey === "\x1b[H") {
+      updateCredentialValue(current, 0);
+    } else if (rawKey === "\x1b[F") {
+      updateCredentialValue(current, current.length);
+    } else if (!rawKey.startsWith("\x1b") && rawKey !== "\t") {
+      updateCredentialValue(
+        current.slice(0, cursor) + rawKey + current.slice(cursor),
+        cursor + rawKey.length
+      );
+    }
+  };
+
   const sendKeyStroke = (rawKey: string, isControlChar = false) => {
+    if (credentialStatusRef.current !== "authenticated") {
+      handleCredentialKey(rawKey);
+      return;
+    }
+
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       waitingRef.current.push(rawKey);
       return;
@@ -1840,6 +2009,58 @@ export const Terminal: React.FC<TermProps> = ({
           {restartable ? "Restart" : "Start"}
         </Button>
         </div> : null}
+
+        {connectionState === "connected" &&
+        credentialStatus !== "authenticated" &&
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "rgba(10, 10, 10, 0.92)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            justifyContent: "center",
+            padding: `${PADDING * 2}px`,
+            boxSizing: "border-box",
+            color: "#e5e5e5",
+            fontFamily: "monospace",
+            fontSize: "12px",
+            lineHeight: 1.6,
+            zIndex: 3,
+            pointerEvents: "none"
+          }}>
+          
+            {credentialStatus === "authenticating" ?
+          <span style={{ color: "#ffff55" }}>Authenticating...</span> :
+          credentialStatus === "prompt" ?
+          <>
+                <span style={{ color: "#00cdcd" }}>
+                  {credentialError || `${credentialChallenge?.credName ?? "Credential"}:`}
+                </span>
+                <span>
+                  {(() => {
+                const shownValue = credentialChallenge?.credTypes.includes("password") ?
+                "•".repeat(credentialValue.length) :
+                credentialValue;
+                return (
+                  <>
+                        {shownValue.slice(0, credentialCursor)}
+                        <span style={{ color: "#ffff55" }}>▌</span>
+                        {shownValue.slice(credentialCursor)}
+                      </>);
+
+              })()}
+                </span>
+                <span style={{ color: "#777", fontSize: "10px" }}>
+                  ENTER to submit · ← → to edit
+                </span>
+              </> :
+
+          <span style={{ color: "#ffff55" }}>Waiting for authentication...</span>
+          }
+          </div>
+        }
         
         {connectionState === "reconnecting" &&
         <div style={{

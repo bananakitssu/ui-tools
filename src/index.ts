@@ -37,6 +37,4 @@ export * from "./useRipple";
 export * from "./View";
 export * from "./Terminal";
 export * from "./Video";
-export * from "./useTerminal";
-export type { UseTerminalOptions } from "./useTerminal";
 export * from "./Link";

@@ -20,11 +20,15 @@
     "typescript7": "npm:typescript@^7.0.2"
   },
   "name": "@bananacool467/ui-tools",
-  "version": "0.2.0-beta",
+  "version": "0.2.1-beta",
   "description": "UI Elements + Tools, for frontend and backend",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "repository": "https://github.com/bananakitssu/ui-tools",
+  "exports": {
+    ".": "./dist/index.js",
+    "./backend": "./dist/backend.js"
+  },
   "scripts": {
     "build": "tsc && [ -d dist/src ] && mv dist/src/* dist/ && rmdir dist/src || true",
     "prepublishOnly": "npm run build",
@@ -43,7 +47,9 @@
     "jsx",
     "ui-tools",
     "ui-components",
-    "ui-elements"
+    "ui-elements",
+    "backend",
+    "frontend"
   ],
   "author": "bananacool467",
   "license": "MIT"

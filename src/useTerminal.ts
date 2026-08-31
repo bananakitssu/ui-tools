@@ -13,6 +13,19 @@ type AuthenticationResult =
 false |
 AuthenticatedUser;
 
+export interface CredExpect {
+  credName: string;
+  credTypes: ('password' | 'string' | 'number')[];
+  credValue: string | number;
+}
+
+export interface Cred {
+  credName: string;
+  credTypes: ('password' | 'string' | 'number')[];
+}
+
+export type TerminalExecutionMode = "sandbox" | "restricted" | "host";
+
 interface TerminalSession {
   ptyProcess: any;
   ws: import("ws").WebSocket | null;
@@ -32,12 +45,28 @@ export interface UseTerminalOptions {
   startupShell?: string;
   startupShellArgs?: string[];
   allowedOrigins?: string[];
-  strictTerminal?: boolean;
+  strictConnection?: boolean;
+
+
+
+
+
+  executionMode?: TerminalExecutionMode;
+
+  strictExecution?: boolean;
+
+  sandboxCommand?: string;
+
+  workspaceRoot?: string;
+
+  allowNetwork?: boolean;
   authentication?: (
   providedToken: string | null,
   req: IncomingMessage,
   res: ServerResponse)
   => AuthenticationResult | Promise<AuthenticationResult>;
+  credentials?: Cred[];
+  credVerification?: (cred: CredExpect[]) => boolean;
   strictEnv?: boolean;
   env?: Record<string, string>;
   maxSessions?: number;
@@ -59,7 +88,14 @@ options: UseTerminalOptions | undefined = undefined)
   const configuredToken = options?.token;
   const restrictToLocalhost = options?.restrictToLocalhost ?? true;
   const allowedOrigins = options?.allowedOrigins ?? [];
-  const strictTerminal = options?.strictTerminal ?? false;
+  const executionMode =
+  options?.executionMode ?? (
+  options?.strictExecution === true ?
+  "sandbox" :
+  options?.strictExecution === false ?
+  "host" :
+  "restricted");
+  const strictConnection = options?.strictConnection ?? false;
   const startupShell = options?.startupShell;
   const startupShellArgs = options?.startupShellArgs;
   const authFunction = options?.authentication;
@@ -68,11 +104,15 @@ options: UseTerminalOptions | undefined = undefined)
   const env = options?.env ?? {};
   const maxConnections = options?.maxConnections ?? 100;
   const maxSessions = options?.maxSessions ?? 100;
-  if (
-  strictTerminal === false)
-  {
+  const allowNetwork = options?.allowNetwork ?? false;
+  if (executionMode === "host") {
     console.warn(
-      "useTerminal suggests using `strictTerminal: true` for security reasons."
+      "[UI Tools Backend] executionMode: 'host' runs commands directly on the host."
+    );
+  } else if (executionMode === "restricted") {
+    console.warn(
+      "[UI Tools Backend] executionMode: 'restricted' is not a security sandbox. " +
+      "Use executionMode: 'sandbox' for host isolation."
     );
   }
   if (
@@ -94,12 +134,16 @@ options: UseTerminalOptions | undefined = undefined)
   { WebSocketServer },
   ptyModule,
   osModule,
-  cryptoModule] =
+  cryptoModule,
+  childProcessModule,
+  pathModule] =
   await Promise.all([
   import("ws"),
   import("@lydell/node-pty"),
   import("os"),
-  import("crypto")]
+  import("crypto"),
+  import("node:child_process"),
+  import("node:path")]
   );
 
   const {
@@ -112,6 +156,96 @@ options: UseTerminalOptions | undefined = undefined)
     )
   } = options!;
   const token = configuredToken;
+  const workspaceRoot = pathModule.resolve(
+    options?.workspaceRoot ?? process.cwd()
+  );
+  const defaultPath =
+  process.platform === "win32" ?
+  "C:\\Windows\\system32;C:\\Windows" :
+  "/bin:/usr/bin";
+  const terminalEnv =
+  executionMode === "host" && !strictEnv ?
+  {
+    ...process.env,
+    ...env,
+    TERM: "xterm-256color"
+  } :
+  {
+    ...env,
+    HOME: executionMode === "sandbox" ?
+    "/workspace" :
+    env.HOME ?? process.env.HOME ?? osModule.homedir(),
+    PATH: env.PATH ?? defaultPath,
+    TERM: "xterm-256color"
+  };
+
+  const findExecutable = (name: string): string | undefined => {
+    try {
+      const lookupCommand = process.platform === "win32" ? "where" : "which";
+      return childProcessModule.
+      execFileSync(lookupCommand, [name], {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"]
+      }).
+      trim().
+      split(/\r?\n/)[0] || undefined;
+    } catch (_) {
+      return undefined;
+    }
+  };
+
+  let sandboxCommandPath: string | undefined;
+  if (executionMode === "sandbox") {
+    sandboxCommandPath =
+    options?.sandboxCommand ?? findExecutable("bwrap");
+    if (!sandboxCommandPath) {
+      throw new Error(
+        "executionMode: 'sandbox' requires Bubblewrap (bwrap). " +
+        "Install bwrap or choose executionMode: 'restricted' for local development."
+      );
+    }
+    if (process.platform !== "linux") {
+      throw new Error(
+        "Bubblewrap sandbox execution is currently supported on Linux only."
+      );
+    }
+    try {
+      childProcessModule.execFileSync(
+        sandboxCommandPath,
+        [
+        "--die-with-parent",
+        "--new-session",
+        "--unshare-user",
+        "--ro-bind-try",
+        "/bin",
+        "/bin",
+        "--ro-bind-try",
+        "/usr",
+        "/usr",
+        "--ro-bind-try",
+        "/lib",
+        "/lib",
+        "--ro-bind-try",
+        "/lib64",
+        "/lib64",
+        "--ro-bind-try",
+        "/nix",
+        "/nix",
+        "--ro-bind-try",
+        "/run",
+        "/run",
+        "--",
+        "/bin/true"],
+
+        { stdio: "ignore", timeout: 5000 }
+      );
+    } catch (_) {
+      throw new Error(
+        "Bubblewrap is installed but cannot create a user namespace. " +
+        "Enable unprivileged user namespaces or choose executionMode: 'restricted'."
+      );
+    }
+  }
 
   const wss = new WebSocketServer({ noServer: true });
   const sessions = new Map<string, TerminalSession>();
@@ -182,10 +316,23 @@ options: UseTerminalOptions | undefined = undefined)
 
   wss.on(
     "connection",
-    (ws: any, req: IncomingMessage, authenticatedUser: AuthenticatedUser) => {
-      if (wss.clients.size > maxConnections) {
+    (ws: any, _: IncomingMessage, authenticatedUser: AuthenticatedUser) => {
+      let authenticated = false;
+      if (wss.clients.size >= maxConnections) {
         ws.close(4003, "Too many connections");
         return;
+      }
+      const credentialChallenge = options?.credentials?.map(
+        ({ credName, credTypes }) => ({ credName, credTypes })
+      );
+      if (options?.credVerification) {
+        ws.send(JSON.stringify({
+          type: "credVerify",
+          data: { creds: credentialChallenge }
+        }));
+      } else {
+        authenticated = true;
+        ws.send(JSON.stringify({ type: "authReady" }));
       }
       let clientSessionId: string | null = null;
 
@@ -197,11 +344,58 @@ options: UseTerminalOptions | undefined = undefined)
 
       ws.on("message", (message: any) => {
         try {
-          if (message.toString().length > MAX_MESSAGE_SIZE) {
-            ws.close(4002, "Message too large");
+          const rawMessage =
+          typeof message === "string" ?
+          message :
+          message.toString("utf8");
+
+          if (Buffer.byteLength(rawMessage, "utf8") >= MAX_MESSAGE_SIZE) {
+            ws.close(1009, "Message too large");
             return;
           }
-          const parsed = JSON.parse(message.toString());
+
+          let parsed: any;
+
+          try {
+            parsed = JSON.parse(rawMessage);
+          } catch {
+
+            ws.close(1007, "Invalid JSON");
+            return;
+          }
+
+          if (
+          parsed === null ||
+          typeof parsed !== "object" ||
+          Array.isArray(parsed))
+          {
+            ws.close(1007, "Invalid message");
+            return;
+          }
+
+
+          const messageData = parsed as Record<string, unknown>;
+          if (!authenticated) {
+            if (parsed.type !== "credVerify") {
+              ws.close(4001, "Unauthorized");
+              return;
+            }
+
+            if (
+            !options?.credVerification ||
+            !options.credVerification(parsed.data))
+            {
+              ws.send(JSON.stringify({
+                type: "credFail",
+                message: "Invalid credentials"
+              }));
+              return;
+            }
+
+            authenticated = true;
+            ws.send(JSON.stringify({ type: "authReady" }));
+            return;
+          }
 
           if (
           parsed.type === "init" &&
@@ -237,18 +431,77 @@ options: UseTerminalOptions | undefined = undefined)
               ws.send(JSON.stringify({ type: "session", sessionId }));
               ws.send(JSON.stringify({ type: "history", history: session.history }));
             } else {
-              if (sessions.size > maxSessions) {
+              if (sessions.size >= maxSessions) {
                 ws.close(4003, "Too many sessions");
+                return;
               }
               const newSessionId = cryptoModule.randomUUID();
               clientSessionId = newSessionId;
 
-              const ptyProcess = ptyModule.spawn(shell, shellArgs, {
+              const spawnCommand =
+              executionMode === "sandbox" ?
+              sandboxCommandPath! :
+              shell;
+              const spawnArgs =
+              executionMode === "sandbox" ?
+              [
+              "--die-with-parent",
+              "--new-session",
+              "--unshare-user",
+              "--unshare-pid",
+              "--unshare-ipc",
+              "--unshare-uts",
+              ...(allowNetwork ? [] : ["--unshare-net"]),
+              "--proc",
+              "/proc",
+              "--dev",
+              "/dev",
+              "--tmpfs",
+              "/tmp",
+              "--ro-bind-try",
+              "/bin",
+              "/bin",
+              "--ro-bind-try",
+              "/usr",
+              "/usr",
+              "--ro-bind-try",
+              "/lib",
+              "/lib",
+              "--ro-bind-try",
+              "/lib64",
+              "/lib64",
+              "--ro-bind-try",
+              "/nix",
+              "/nix",
+              "--ro-bind-try",
+              "/run",
+              "/run",
+              "--bind",
+              workspaceRoot,
+              "/workspace",
+              "--chdir",
+              "/workspace",
+              "--clearenv",
+              ...Object.entries(terminalEnv).flatMap(([key, value]) => [
+              "--setenv",
+              key,
+              String(value)]
+              ),
+              "--",
+              shell,
+              ...shellArgs] :
+
+              shellArgs;
+              const spawnCwd =
+              executionMode === "sandbox" ?
+              workspaceRoot :
+              process.env.HOME || osModule.homedir();
+              const ptyProcess = ptyModule.spawn(spawnCommand, spawnArgs, {
                 name: "xterm-256color",
                 cols: cols || 29,
                 rows: rows || 8,
-                cwd: process.env.HOME || osModule.homedir(),
-                env: strictEnv ? { ...env, TERM: "xterm-256color" } : { ...process.env, ...env, TERM: "xterm-256color" }
+                cwd: spawnCwd,
+                env: terminalEnv
               });
 
               const maxLifetimeTimeout = setTimeout(() => {
@@ -340,11 +593,10 @@ options: UseTerminalOptions | undefined = undefined)
               ws.send(JSON.stringify({ type: "giveInit" }));
             }
           }
-        } catch (_) {
-          if (clientSessionId) {
-            const session = sessions.get(clientSessionId);
-            if (session) session.ptyProcess.write(message.toString());
-          }
+        } catch (error) {
+          console.error("Terminal protocol error:", error);
+          ws.close(1011, "Internal server error");
+          return;
         }
       });
 
@@ -377,12 +629,13 @@ options: UseTerminalOptions | undefined = undefined)
 
     const base = `${protocol}://${req.headers.host}`;
     const requestUrl = new URL(req.url || "/", restrictToLocalhost ? "http://localhost" : base);
+    const origin = req.headers.origin;
     if (!restrictToLocalhost && protocol !== "https") {
       res.writeHead(400);
       res.end("Secure connection required");
       return;
     }
-    if (strictTerminal && !allowedOrigins.includes(requestUrl.origin)) {
+    if (strictConnection && !allowedOrigins.includes(origin || "unknown")) {
       res.writeHead(403);
       res.end("Forbidden");
       return;

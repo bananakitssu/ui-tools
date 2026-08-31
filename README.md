@@ -1,7 +1,7 @@
 # UI Tools
 
 <p align="center">
-  <img alt="version" src="https://img.shields.io/badge/version-v0.2.0-green?style=for-the-badge" />
+  <img alt="version" src="https://img.shields.io/badge/version-v0.2.1-green?style=for-the-badge" />
   <img alt="version type" src="https://img.shields.io/badge/version_type-BETA-yellow?style=for-the-badge" />
   <img alt="license" src="https://img.shields.io/github/license/bananakitssu/ui-tools?style=for-the-badge" />
   <img alt="downloads" src="https://img.shields.io/npm/dm/@bananacool467/ui-tools?style=for-the-badge" />
@@ -72,7 +72,7 @@ parameter. Do not expose a long-lived token in a public application; use an
 authenticated application session or a short-lived credential for public
 terminals.
 
-It is recommened to set the terminal restricted only to your localhost, you can use instead:
+For local development, keep the terminal restricted to localhost:
 ```ts
 const terminalHandler = await useTerminal({
   restrictToLocalhost: true,
@@ -82,18 +82,34 @@ const terminalHandler = await useTerminal({
 app.get("/terminal-stream", terminalHandler);
 ```
 
-Or you can run the terminal inside of a VM (recommended):
+### Command execution modes
+
+`strictEnv` and a limited `PATH` are hardening measures, not a security
+sandbox. Use an explicit execution mode:
+
+- `restricted` (default) limits the environment but runs the shell on the host.
+- `host` runs the shell directly with the host environment and is for
+  development only.
+- `sandbox` runs the shell inside Bubblewrap on Linux and fails closed if
+  Bubblewrap cannot create a user namespace.
+
+Bubblewrap does not require Docker. Install `bwrap` through your operating
+system's package manager, then use:
+
 ```ts
 const terminalHandler = await useTerminal({
-  startupShell: 'qemu-system-x86_64',
-  startupShellArgs: [
-    /* args for running the OS */
-  ],
   token: process.env.TERMINAL_TOKEN,
+  executionMode: "sandbox",
+  workspaceRoot: process.cwd(),
+  allowNetwork: false,
 });
 
 app.get("/terminal-stream", terminalHandler);
 ```
+
+If Bubblewrap is unavailable, use `executionMode: "restricted"` for local
+development. It must not be presented as isolation for hostile or
+multi-tenant users.
 
 You can also setup your own authenticate feature, example:
 ```ts
@@ -112,10 +128,9 @@ You can also restrict the terminal to some origins:
 ```ts
 const terminalHandler = await useTerminal({
   token: process.env.TERMINAL_TOKEN,
-  strictTerminal: true,
+  strictConnection: true,
   allowedOrigins: [
-    "localhost",
-    "127.0.0.1"
+    "https://your-app.example"
   ]
 });
 
