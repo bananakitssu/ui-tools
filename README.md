@@ -727,20 +727,24 @@ The backend has built-in limits for terminal sessions and connections:
 
 `Terminal` renders the terminal UI in React and communicates with the backend through WebSockets.
 
+The `url` prop is a **path on the current host**, not a complete WebSocket URL. The component automatically builds the WebSocket URL using the current page's protocol and host:
+
 ```tsx
 <Terminal
   token={terminalToken}
-  url="wss://your-app.example/terminal-stream"
+  url="/terminal-stream"
   width={600}
   height={420}
   controls
 />
 ```
 
+If `url` is omitted, the default path is `/terminal-stream`. For an HTTPS page the component uses `wss://`; for an HTTP page it uses `ws://`.
+
 Useful props include:
 
 - `token` — required authentication token.
-- `url` — WebSocket endpoint; use this when the endpoint is not the default.
+- `url` — relative WebSocket endpoint path on the current host; defaults to `/terminal-stream`.
 - `width` / `height` — terminal dimensions.
 - `controls` — shows terminal controls.
 - `p` — theme spacing token for padding.
