@@ -1220,21 +1220,26 @@ export const Terminal: React.FC<TermProps> = ({
 
 
         if (event.code === 1006 && !credentialAuthenticatedRef.current) {
-          try {
-            const fetchTest = await fetch(wsFetchUrl);
-            if (fetchTest.status !== 200) {
-              setConnectionState("reconnecting");
-              setConnectionError(`(${fetchTest.status}) ${fetchTest.statusText}`);
 
-              reconnectTimer = setTimeout(connect, 5000);
-              return;
-            }
-          } catch (err) {
-            setConnectionState("failed");
-            setConnectionError("Network unreachable");
-            reconnectTimer = setTimeout(connect, 5000);
-            return;
-          }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          setConnectionState("reconnecting");
+
+
+          reconnectTimer = setTimeout(connect, 5000);
+          return;
         }
       };
 
