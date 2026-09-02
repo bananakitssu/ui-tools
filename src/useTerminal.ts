@@ -33,6 +33,8 @@ interface TerminalSession {
   maxLifetimeTimeout?: ReturnType<typeof setTimeout>;
   history: string;
   userId: string;
+  firstTime: boolean;
+  ready: boolean;
 }
 
 export interface UseTerminalOptions {
@@ -71,6 +73,7 @@ export interface UseTerminalOptions {
   env?: Record<string, string>;
   maxSessions?: number;
   maxConnections?: number;
+  startupText?: string;
 }
 
 export type TerminalHandler = (
@@ -105,6 +108,7 @@ options: UseTerminalOptions | undefined = undefined)
   const maxConnections = options?.maxConnections ?? 100;
   const maxSessions = options?.maxSessions ?? 100;
   const allowNetwork = options?.allowNetwork ?? false;
+  const startupText = options?.startupText;
   if (executionMode === "host") {
     console.warn(
       "[UI Tools Backend] executionMode: 'host' runs commands directly on the host."
@@ -322,14 +326,22 @@ options: UseTerminalOptions | undefined = undefined)
         ws.close(4003, "Too many connections");
         return;
       }
-      const credentialChallenge = options?.credentials?.map(
-        ({ credName, credTypes }) => ({ credName, credTypes })
-      );
-      if (options?.credVerification) {
-        ws.send(JSON.stringify({
-          type: "credVerify",
-          data: { creds: credentialChallenge }
-        }));
+      const credentialChallenge: Cred[] = options?.credentials ?
+      options.credentials.map(({ credName, credTypes }) => ({
+        credName,
+        credTypes: [...credTypes]
+      })) :
+      [];
+
+      if (options?.credVerification && credentialChallenge.length > 0) {
+        ws.send(
+          JSON.stringify({
+            type: "credVerify",
+            data: {
+              creds: credentialChallenge
+            }
+          })
+        );
       } else {
         authenticated = true;
         ws.send(JSON.stringify({ type: "authReady" }));
@@ -376,24 +388,112 @@ options: UseTerminalOptions | undefined = undefined)
 
           const messageData = parsed as Record<string, unknown>;
           if (!authenticated) {
+
+
             if (parsed.type !== "credVerify") {
               ws.close(4001, "Unauthorized");
               return;
             }
 
-            if (
-            !options?.credVerification ||
-            !options.credVerification(parsed.data))
-            {
-              ws.send(JSON.stringify({
-                type: "credFail",
-                message: "Invalid credentials"
-              }));
+            const submittedCreds = parsed.data?.creds;
+
+            if (!Array.isArray(submittedCreds)) {
+              ws.send(
+                JSON.stringify({
+                  type: "credFail",
+                  message: "Invalid credential payload"
+                })
+              );
+              return;
+            }
+
+            const expectedCreds = options?.credentials ?? [];
+
+
+            if (submittedCreds.length !== expectedCreds.length) {
+              ws.send(
+                JSON.stringify({
+                  type: "credFail",
+                  message: "Invalid credentials"
+                })
+              );
+              return;
+            }
+
+            const normalizedCreds: CredExpect[] = [];
+
+            for (let i = 0; i < expectedCreds.length; i++) {
+              const expected = expectedCreds[i];
+              const submitted = submittedCreds[i];
+
+              if (
+              !submitted ||
+              typeof submitted !== "object" ||
+              submitted.credName !== expected.credName ||
+              !Array.isArray(submitted.credTypes))
+              {
+                ws.send(
+                  JSON.stringify({
+                    type: "credFail",
+                    message: "Invalid credentials"
+                  })
+                );
+                return;
+              }
+
+              const validTypes = submitted.credTypes.every(
+                (type: unknown) =>
+                type === "password" ||
+                type === "string" ||
+                type === "number"
+              );
+
+              if (!validTypes) {
+                ws.send(
+                  JSON.stringify({
+                    type: "credFail",
+                    message: "Invalid credentials"
+                  })
+                );
+                return;
+              }
+
+              normalizedCreds.push({
+                credName: expected.credName,
+                credTypes: [...expected.credTypes],
+                credValue: submitted.credValue
+              });
+            }
+
+            let verified = false;
+
+            try {
+              verified = Boolean(
+                options?.credVerification?.(normalizedCreds)
+              );
+            } catch (error) {
+              console.error("Credential verification error:", error);
+              verified = false;
+            }
+
+            if (!verified) {
+              ws.send(
+                JSON.stringify({
+                  type: "credFail",
+                  message: "Invalid credentials"
+                })
+              );
               return;
             }
 
             authenticated = true;
-            ws.send(JSON.stringify({ type: "authReady" }));
+
+            ws.send(
+              JSON.stringify({
+                type: "authReady"
+              })
+            );
+
             return;
           }
 
@@ -513,7 +613,20 @@ options: UseTerminalOptions | undefined = undefined)
                 }
               }, MAX_SESSION_LIFETIME);
 
+              const sessionState: TerminalSession = {
+                ptyProcess,
+                ws,
+                cleanupTimeout: null,
+                maxLifetimeTimeout,
+                history: "",
+                userId: authenticatedUser.id,
+                firstTime: true,
+                ready: false
+              };
+              sessions.set(newSessionId, sessionState);
+
               setTimeout(() => {
+                console.log("INITIAL PTY WRITE", newSessionId, Date.now());
                 if (shell === "bash") {
                   ptyProcess.write(
                     'export PS1="\\[\\e[1;36m\\]\\w\\[\\e[0m\\] \\[\\e[1;32m\\]\\$\\[\\e[0m\\] "; clear\r'
@@ -522,16 +635,6 @@ options: UseTerminalOptions | undefined = undefined)
                   ptyProcess.write('function prompt { "PS $(get-location)> " }; clear\r');
                 }
               }, 100);
-
-              const sessionState: TerminalSession = {
-                ptyProcess,
-                ws,
-                cleanupTimeout: null,
-                maxLifetimeTimeout,
-                history: "",
-                userId: authenticatedUser.id
-              };
-              sessions.set(newSessionId, sessionState);
 
               ptyProcess.onExit((event: any) => {
                 if (ws.readyState === ws.OPEN) {
@@ -546,11 +649,75 @@ options: UseTerminalOptions | undefined = undefined)
                 sessions.delete(newSessionId);
               });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
               ptyProcess.onData((data: string) => {
                 const current = sessions.get(newSessionId);
                 if (!current) return;
 
+                const isClear = /\x1b\[(?:0|1|2|3)J/.test(data);
+
                 current.history += data;
+
                 if (current.history.length > maxHistory) {
                   current.history = current.history.slice(
                     current.history.length - maxHistory
@@ -559,6 +726,23 @@ options: UseTerminalOptions | undefined = undefined)
 
                 if (current.ws && current.ws.readyState === current.ws.OPEN) {
                   current.ws.send(data);
+                }
+
+
+                if (!current.ready && isClear) {
+                  current.ready = true;
+                  return;
+                }
+
+
+                if (current.ready && current.firstTime && startupText) {
+                  current.history += startupText;
+
+                  if (current.ws && current.ws.readyState === current.ws.OPEN) {
+                    current.ws.send(startupText);
+                  }
+
+                  current.firstTime = false;
                 }
               });
 

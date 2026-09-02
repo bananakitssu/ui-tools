@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useTheme, type Theme } from './theme';
 import { Button } from './Button';
+import type { Cred, CredExpect } from "./useTerminalTypesBrowser";
 
 export interface TermProps extends React.HTMLAttributes<HTMLElement> {
   p?: keyof Theme['spacing'];
@@ -201,7 +202,18 @@ export const Terminal: React.FC<TermProps> = ({
   const popoverRef = useRef<HTMLDivElement>(null);
   const [restartable, setRestartable] = useState(true);
   const waitingRef = useRef<string[]>([]);
+  const credentialsRef = useRef<Cred[]>([]);
+  const credentialValuesRef = useRef<Array<string | number>>([]);
+  const credentialIndexRef = useRef(0);
+  const credentialCursorRef = useRef(0);
+  const credentialAuthenticatedRef = useRef(false);
+  const credentialPromptRef = useRef(false);
+  const credentialPromptStartRef = useRef<{
+    x: number;
+    y: number;
+  } | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const currentPromptLineRef = useRef(0);
   const getGridPosFromPointer = (e: React.PointerEvent | MouseEvent) => {
     if (!canvasRef.current) return null;
     const rect = canvasRef.current.getBoundingClientRect();
@@ -306,7 +318,7 @@ export const Terminal: React.FC<TermProps> = ({
   const [credentialChallenge, setCredentialChallenge] =
   useState<CredentialChallenge | null>(null);
   const credentialValueRef = useRef("");
-  const credentialCursorRef = useRef(0);
+
   const [credentialValue, setCredentialValue] = useState("");
   const [credentialCursor, setCredentialCursor] = useState(0);
   const [credentialError, setCredentialError] = useState("");
@@ -463,6 +475,41 @@ export const Terminal: React.FC<TermProps> = ({
 
     return { x, lineIndex };
   };
+
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.log("[Terminal] UNHANDLED ERROR:", {
+        message: event.message,
+        error: event.error,
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno
+      });
+    };
+
+    const handleUnhandledRejection = (
+    event: PromiseRejectionEvent) =>
+    {
+      console.log(
+        "[Terminal] UNHANDLED PROMISE REJECTION:",
+        event.reason
+      );
+    };
+
+    window.addEventListener("error", handleError);
+    window.addEventListener(
+      "unhandledrejection",
+      handleUnhandledRejection
+    );
+
+    return () => {
+      window.removeEventListener("error", handleError);
+      window.removeEventListener(
+        "unhandledrejection",
+        handleUnhandledRejection
+      );
+    };
+  }, []);
 
   useEffect(() => {
     set_y_(cursorRef.current?.y ?? 0);
@@ -763,6 +810,24 @@ export const Terminal: React.FC<TermProps> = ({
               }
             }
           }
+        } else if (nextChar === ']') {
+          let oscEnd = i + 2;
+
+          while (oscEnd < data.length) {
+            if (data[oscEnd] === '\x07') {
+              oscEnd++;
+              break;
+            }
+
+            if (data[oscEnd] === '\x1b' && data[oscEnd + 1] === '\\') {
+              oscEnd += 2;
+              break;
+            }
+
+            oscEnd++;
+          }
+
+          i = oscEnd;
         } else if (nextChar === '(' || nextChar === ')') {
           i += 3;
         } else if (nextChar === '7') {
@@ -844,6 +909,129 @@ export const Terminal: React.FC<TermProps> = ({
       }));
     };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    const renderCredentialPrompt = () => {
+      const creds = credentialsRef.current;
+      if (!creds.length) return;
+
+      const cursor = cursorRef.current;
+      credentialPromptStartRef.current = {
+        x: cursor.x,
+        y: cursor.y
+      };
+
+      for (let i = 0; i < creds.length; i++) {
+        const cred = creds[i];
+        const value = String(credentialValuesRef.current[i] ?? "");
+        const isPassword = cred.credTypes.includes("password");
+        const displayed = isPassword ? "•".repeat(value.length) : value;
+        const active = i === credentialIndexRef.current;
+
+        writeToTerminal(
+          `${active ? "\x1b[36m> " : "  "}${cred.credName}: ${displayed}\x1b[0m`
+        );
+
+        if (i < creds.length - 1) {
+          writeToTerminal("\r\n");
+        }
+      }
+
+
+      const activeIdx = credentialIndexRef.current;
+      const linesUp = creds.length - 1 - activeIdx;
+      if (linesUp > 0) {
+        writeToTerminal(`\x1b[${linesUp}A`);
+      }
+
+
+      const activeCred = creds[activeIdx];
+      const col1Based = activeCred.credName.length + 5 + credentialCursorRef.current;
+      writeToTerminal(`\x1b[${col1Based}G`);
+
+      currentPromptLineRef.current = activeIdx;
+    };
+
     const connect = () => {
       if (disposed) return;
       setConnectionState("reconnecting");
@@ -866,43 +1054,98 @@ export const Terminal: React.FC<TermProps> = ({
         try {
           const payload = JSON.parse(event.data);
           if (payload && typeof payload === "object") {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             if (payload.type === "credVerify") {
-              const receivedCreds = payload.data?.creds;
-              const receivedChallenge = Array.isArray(receivedCreds) ?
-              receivedCreds[0] :
-              receivedCreds;
-              const challenge: CredentialChallenge = {
-                credName:
-                typeof receivedChallenge?.credName === "string" ?
-                receivedChallenge.credName :
-                "credential",
-                credTypes:
-                Array.isArray(receivedChallenge?.credTypes) &&
-                receivedChallenge.credTypes.length > 0 ?
-                receivedChallenge.credTypes.filter(
-                  (type: unknown): type is CredentialType =>
-                  type === "password" ||
-                  type === "string" ||
-                  type === "number"
-                ) :
-                ["string"]
-              };
-              resetCredentialPrompt(challenge);
+              const creds: Cred[] = Array.isArray(payload.data?.creds) ?
+              payload.data.creds.filter(
+                (cred: any): cred is Cred =>
+                cred &&
+                typeof cred.credName === "string" &&
+                Array.isArray(cred.credTypes)
+              ) :
+              [];
+
+              credentialsRef.current = creds;
+              credentialValuesRef.current = creds.map(() => "");
+              credentialIndexRef.current = 0;
+              credentialCursorRef.current = 0;
+              credentialAuthenticatedRef.current = false;
+              credentialPromptRef.current = true;
+
+              renderCredentialPrompt();
+
               processed = true;
-            } else if (payload.type === "credFail") {
-              setCredentialError(
-                typeof payload.message === "string" ?
-                payload.message :
-                "Invalid credentials"
-              );
-              updateCredentialValue("", 0);
-              setCredentialStatus("prompt");
-              processed = true;
+              return;
             } else if (payload.type === "authReady") {
-              setCredentialError("");
-              setCredentialStatus("authenticated");
+              credentialAuthenticatedRef.current = true;
+              credentialPromptRef.current = false;
+              credentialPromptStartRef.current = null;
+              credentialIndexRef.current = 0;
+              credentialCursorRef.current = 0;
+
+              writeToTerminal(
+                "\r\n\x1b[32mAuthenticated.\x1b[0m\r\n"
+              );
+
               sendInit(ws);
+
               processed = true;
+              return;
+            } else if (payload.type === "credFail") {
+              credentialPromptRef.current = true;
+              credentialAuthenticatedRef.current = false;
+
+              writeToTerminal(
+                "\r\n\x1b[31mInvalid credentials.\x1b[0m\r\n"
+              );
+
+              credentialValuesRef.current =
+              credentialValuesRef.current.map(() => "");
+
+              credentialIndexRef.current = 0;
+              credentialCursorRef.current = 0;
+
+              renderCredentialPrompt();
+
+              processed = true;
+              return;
             } else if (payload.type === "session") {
               sessionIdRef.current = payload.sessionId;
               localStorage.setItem("terminal_session_id", payload.sessionId);
@@ -916,12 +1159,12 @@ export const Terminal: React.FC<TermProps> = ({
                 payload.history || payload.data || payload.logs || "";
                 if (historyData) {
 
-                  const chunkSize = 1000;
 
-                  for (let i = 0; i < historyData.length; i += chunkSize) {
-                    writeToTerminal(historyData.slice(i, i + chunkSize));
-                  }
 
+
+
+
+                  writeToTerminal(historyData);
 
 
 
@@ -973,27 +1216,32 @@ export const Terminal: React.FC<TermProps> = ({
       };
 
       ws.onclose = async (event) => {
-        console.log(event.code, event.reason, event.wasClean);
-        if (event.code != 1000) {
-          const fetchTest = await fetch(wsFetchUrl);
-          if (fetchTest.status != 200 && event.code === 1006) {
-            setConnectionState("failed");
-            setConnectionError(`(${fetchTest.status}) ${fetchTest.statusText}`);
-          } else {
-            setConnectionState("failed");
-            setConnectionError(`(${event.code}) ${event.reason}`);
-          }
-          return;
-        }
         if (disposed) return;
-        setConnectionState("reconnecting");
-        reconnectTimer = setTimeout(connect, 3000);
+
+
+        if (event.code === 1006 && !credentialAuthenticatedRef.current) {
+          try {
+            const fetchTest = await fetch(wsFetchUrl);
+            if (fetchTest.status !== 200) {
+              setConnectionState("reconnecting");
+              setConnectionError(`(${fetchTest.status}) ${fetchTest.statusText}`);
+
+              reconnectTimer = setTimeout(connect, 5000);
+              return;
+            }
+          } catch (err) {
+            setConnectionState("failed");
+            setConnectionError("Network unreachable");
+            reconnectTimer = setTimeout(connect, 5000);
+            return;
+          }
+        }
       };
 
-      ws.onerror = (e) => {
+      ws.onerror = () => {
+        ws.close();
 
-        setConnectionState("failed");
-        setConnectionError(e.toString());
+
       };
     };
 
@@ -1006,75 +1254,422 @@ export const Terminal: React.FC<TermProps> = ({
     };
   }, [token]);
 
-  const submitCredential = () => {
+  const redrawCredentialPrompt = () => {
+    if (credentialAuthenticatedRef.current) return;
+
+    const start = credentialPromptStartRef.current;
+    if (!start) return;
+
+    const creds = credentialsRef.current;
+    if (!creds.length) return;
+
+
+    const currentLine = currentPromptLineRef.current;
+    if (currentLine > 0) {
+      writeToTerminal(`\x1b[${currentLine}A`);
+    }
+
+    writeToTerminal("\r");
+
+    for (let i = 0; i < creds.length; i++) {
+      writeToTerminal("\x1b[2K\r");
+
+      const cred = creds[i];
+      const value = String(credentialValuesRef.current[i] ?? "");
+      const isPassword = cred.credTypes.includes("password");
+      const displayed = isPassword ? "•".repeat(value.length) : value;
+      const active = i === credentialIndexRef.current;
+
+      writeToTerminal(
+        `${active ? "\x1b[36m> " : "  "}${cred.credName}: ${displayed}\x1b[0m`
+      );
+
+      if (i < creds.length - 1) {
+        writeToTerminal("\r\n");
+      }
+    }
+
+
+    const activeIdx = credentialIndexRef.current;
+    const linesUp = creds.length - 1 - activeIdx;
+    if (linesUp > 0) {
+      writeToTerminal(`\x1b[${linesUp}A`);
+    }
+
+
+    const activeCred = creds[activeIdx];
+    const col1Based = activeCred.credName.length + 5 + credentialCursorRef.current;
+    writeToTerminal(`\x1b[${col1Based}G`);
+
+    currentPromptLineRef.current = activeIdx;
+  };
+
+  const handleCredentialKey = (rawKey: string) => {
+    if (!credentialPromptRef.current) return;
+
+    const creds = credentialsRef.current;
+    const index = credentialIndexRef.current;
+
+    if (!creds.length || !creds[index]) return;
+
+    const credential = creds[index];
+    const current = String(credentialValuesRef.current[index] ?? "");
+    const cursor = credentialCursorRef.current;
+
+
+    if (rawKey === "\r" || rawKey === "\n") {
+      if (index < creds.length - 1) {
+        credentialIndexRef.current = index + 1;
+        credentialCursorRef.current = String(
+          credentialValuesRef.current[index + 1] ?? ""
+        ).length;
+
+        redrawCredentialPrompt();
+      } else {
+        submitCredentials();
+      }
+      return;
+    }
+
+
+    if (rawKey === "\x7f") {
+      if (cursor > 0) {
+        credentialValuesRef.current[index] =
+        current.slice(0, cursor - 1) + current.slice(cursor);
+        credentialCursorRef.current = cursor - 1;
+
+        redrawCredentialPrompt();
+      }
+      return;
+    }
+
+
+    if (rawKey === "\x1b[D") {
+      credentialCursorRef.current = Math.max(0, cursor - 1);
+      redrawCredentialPrompt();
+      return;
+    }
+
+
+    if (rawKey === "\x1b[C") {
+      credentialCursorRef.current = Math.min(current.length, cursor + 1);
+      redrawCredentialPrompt();
+      return;
+    }
+
+
+    if (rawKey === "\x1b[A") {
+      credentialIndexRef.current = Math.max(0, index - 1);
+      credentialCursorRef.current = String(
+        credentialValuesRef.current[credentialIndexRef.current] ?? ""
+      ).length;
+
+      redrawCredentialPrompt();
+      return;
+    }
+
+
+    if (rawKey === "\x1b[B") {
+      credentialIndexRef.current = Math.min(creds.length - 1, index + 1);
+      credentialCursorRef.current = String(
+        credentialValuesRef.current[credentialIndexRef.current] ?? ""
+      ).length;
+
+      redrawCredentialPrompt();
+      return;
+    }
+
+
+    if (rawKey === "\x1b[H") {
+      credentialCursorRef.current = 0;
+      redrawCredentialPrompt();
+      return;
+    }
+
+
+    if (rawKey === "\x1b[F") {
+      credentialCursorRef.current = current.length;
+      redrawCredentialPrompt();
+      return;
+    }
+
+
+    if (rawKey === "\t") {
+      credentialIndexRef.current = (index + 1) % creds.length;
+      credentialCursorRef.current = String(
+        credentialValuesRef.current[credentialIndexRef.current] ?? ""
+      ).length;
+
+      redrawCredentialPrompt();
+      return;
+    }
+
+    if (rawKey.startsWith("\x1b") || rawKey.length !== 1) {
+      return;
+    }
+
+
+    const numberOnly =
+    credential.credTypes.includes("number") &&
+    !credential.credTypes.includes("string");
+
+    if (numberOnly && !/[0-9.-]/.test(rawKey)) {
+      return;
+    }
+
+    credentialValuesRef.current[index] =
+    current.slice(0, cursor) + rawKey + current.slice(cursor);
+    credentialCursorRef.current = cursor + rawKey.length;
+
+    redrawCredentialPrompt();
+  };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const submitCredentials = () => {
     const socket = wsRef.current;
-    const challenge = credentialChallenge;
+
     if (
     !socket ||
     socket.readyState !== WebSocket.OPEN ||
-    !challenge ||
-    credentialStatusRef.current !== "prompt")
+    !credentialPromptRef.current)
     {
       return;
     }
 
-    const rawValue = credentialValueRef.current;
-    const isNumberCredential =
-    challenge.credTypes.length === 1 &&
-    challenge.credTypes[0] === "number";
-    const value =
-    isNumberCredential && rawValue.length > 0 ?
-    Number(rawValue) :
-    rawValue;
-
-    setCredentialError("");
-    setCredentialStatus("authenticating");
-    socket.send(JSON.stringify({
-      type: "credVerify",
-      data: [{
-        credName: challenge.credName,
-        credTypes: challenge.credTypes,
-        credValue: value
-      }]
-    }));
-  };
-
-  const handleCredentialKey = (rawKey: string) => {
-    if (credentialStatusRef.current !== "prompt") return;
-
-    const current = credentialValueRef.current;
-    const cursor = credentialCursorRef.current;
-
-    if (rawKey === "\r" || rawKey === "\n") {
-      submitCredential();
-    } else if (rawKey === "\x7f") {
-      if (cursor > 0) {
-        updateCredentialValue(
-          current.slice(0, cursor - 1) + current.slice(cursor),
-          cursor - 1
-        );
-      }
-    } else if (rawKey === "\x1b[D") {
-      updateCredentialValue(current, Math.max(0, cursor - 1));
-    } else if (rawKey === "\x1b[C") {
-      updateCredentialValue(current, Math.min(current.length, cursor + 1));
-    } else if (rawKey === "\x1b[H") {
-      updateCredentialValue(current, 0);
-    } else if (rawKey === "\x1b[F") {
-      updateCredentialValue(current, current.length);
-    } else if (!rawKey.startsWith("\x1b") && rawKey !== "\t") {
-      updateCredentialValue(
-        current.slice(0, cursor) + rawKey + current.slice(cursor),
-        cursor + rawKey.length
+    const submitted: CredExpect[] =
+    credentialsRef.current.map((cred, index) => {
+      const rawValue = String(
+        credentialValuesRef.current[index] ?? ""
       );
-    }
+
+      const wantsNumber =
+      cred.credTypes.includes("number") &&
+      !cred.credTypes.includes("string");
+
+      return {
+        credName: cred.credName,
+        credTypes: [...cred.credTypes],
+        credValue: wantsNumber ?
+        Number(rawValue) :
+        rawValue
+      };
+    });
+
+    credentialPromptRef.current = false;
+
+    socket.send(
+      JSON.stringify({
+        type: "credVerify",
+        data: {
+          creds: submitted
+        }
+      })
+    );
   };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   const sendKeyStroke = (rawKey: string, isControlChar = false) => {
-    if (credentialStatusRef.current !== "authenticated") {
+    if (!credentialAuthenticatedRef.current) {
       handleCredentialKey(rawKey);
       return;
     }
+
+
+
+
 
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       waitingRef.current.push(rawKey);
@@ -2010,56 +2605,56 @@ export const Terminal: React.FC<TermProps> = ({
         </Button>
         </div> : null}
 
-        {connectionState === "connected" &&
-        credentialStatus !== "authenticated" &&
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "rgba(10, 10, 10, 0.92)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-start",
-            justifyContent: "center",
-            padding: `${PADDING * 2}px`,
-            boxSizing: "border-box",
-            color: "#e5e5e5",
-            fontFamily: "monospace",
-            fontSize: "12px",
-            lineHeight: 1.6,
-            zIndex: 3,
-            pointerEvents: "none"
-          }}>
-          
-            {credentialStatus === "authenticating" ?
-          <span style={{ color: "#ffff55" }}>Authenticating...</span> :
-          credentialStatus === "prompt" ?
-          <>
-                <span style={{ color: "#00cdcd" }}>
-                  {credentialError || `${credentialChallenge?.credName ?? "Credential"}:`}
-                </span>
-                <span>
-                  {(() => {
-                const shownValue = credentialChallenge?.credTypes.includes("password") ?
-                "•".repeat(credentialValue.length) :
-                credentialValue;
-                return (
-                  <>
-                        {shownValue.slice(0, credentialCursor)}
-                        <span style={{ color: "#ffff55" }}>▌</span>
-                        {shownValue.slice(credentialCursor)}
-                      </>);
+        {
 
-              })()}
-                </span>
-                <span style={{ color: "#777", fontSize: "10px" }}>
-                  ENTER to submit · ← → to edit
-                </span>
-              </> :
 
-          <span style={{ color: "#ffff55" }}>Waiting for authentication...</span>
-          }
-          </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         }
         
         {connectionState === "reconnecting" &&
