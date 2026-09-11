@@ -16,6 +16,20 @@ A small React + TypeScript component and UI-tools library for frontend applicati
 
 > **Status:** UI Tools is currently under development and published as a beta package.
 
+## Security
+
+UI Tools has a documented security history. Earlier beta releases of the optional backend terminal had insufficient authentication around the WebSocket/PTY terminal.
+
+- `0.1.0-beta` through `0.1.8-beta` are treated as affected by the historical terminal authentication issue.
+- `0.1.9-beta` added authentication before WebSocket upgrades and PTY creation.
+- `0.2.0-beta` added additional connection, origin, session, environment, and execution hardening.
+- `0.2.1-beta` adds credential verification and additional execution/sandbox controls.
+- The terminal backend is exposed separately through `@bananacool467/ui-tools/backend`.
+- Installing the package does **not** start the terminal. The terminal functionality must be explicitly imported and used by an application.
+- The package does not define a `postinstall` script.
+
+For the detailed security policy and current status, see [`SECURITY.md`](SECURITY.md) and [`SECURITY-STATUS.md`](SECURITY-STATUS.md). The machine-readable LLM context is available in [`llms.txt`](llms.txt) and [`llms-full.txt`](llms-full.txt).
+
 ## Installation
 
 ### NPM
