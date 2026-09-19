@@ -1,8 +1,12 @@
 ## 0.2.2-beta
 
+### Added
+
+- Added `startupText`, which displays text at the top of the Terminal when it starts.
+
 ### Fixed
 
-- Fixed an issue where the terminal parser could parse sequences incorrectly after adding OSC `]` support.
+- Fixed an issue where the terminal parser could parse sequences incorrectly after adding OSC `] ` support.
 
 ## 0.2.1-beta
 
