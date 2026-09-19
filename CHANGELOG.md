@@ -1,3 +1,9 @@
+## 0.2.2-beta
+
+### Fixed
+
+- Fixed an issue where the terminal parser could parse sequences incorrectly after adding OSC `]` support.
+
 ## 0.2.1-beta
 
 ### Security
