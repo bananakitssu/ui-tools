@@ -6,7 +6,7 @@
 
 ### Fixed
 
-- Fixed an issue where the terminal parser could parse sequences incorrectly after adding OSC `] ` support.
+- Fixed an issue where the terminal parser could parse sequences incorrectly after adding OSC `]` support.
 
 ## 0.2.1-beta
 
