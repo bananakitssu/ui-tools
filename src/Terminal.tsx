@@ -327,6 +327,7 @@ export const Terminal: React.FC<TermProps> = ({
   const [ctrlPressed, setCtrlPressedState] = useState(false);
   const [altPressed, setAltPressedState] = useState(false);
   const [shiftPressed, setShiftPressedState] = useState(false);
+  const usedCredsRef = useRef<CredExpect[]>([]);
 
   const ctrlPressedRef = useRef(false);
   const altPressedRef = useRef(false);
@@ -573,13 +574,54 @@ export const Terminal: React.FC<TermProps> = ({
     }
   };
 
-  const writeToTerminal = (rawData: string) => {
+  const ansiBufferRef = useRef("");
+  const lastPrintedCharRef = useRef(" ");
 
-    const data = rawData;
+  const supportedCommands = new Set([
+  '@',
+  'A',
+  'B',
+  'C',
+  'D',
+  'E',
+  'F',
+  'G',
+  'H',
+  'I',
+  'J',
+  'K',
+  'L',
+  'M',
+  'P',
+  'S',
+  'T',
+  'X',
+  'Z',
+  'a',
+  'b',
+  'd',
+  'e',
+  'f',
+  'h',
+  'l',
+  'm',
+  'n',
+  'p',
+  'r',
+  's',
+  't',
+  'u']
+  );
+
+  const writeToTerminal = (rawData: string) => {
+    const data = ansiBufferRef.current + rawData;
+    ansiBufferRef.current = "";
 
     const grid = gridRef.current;
     let { x, y } = cursorRef.current;
     let style = currentStyleRef.current;
+
+    let lastPrintedChar = lastPrintedCharRef.current;
 
     const scrollUp = (amount: number) => {
       const top = scrollTopRef.current;
@@ -632,14 +674,44 @@ export const Terminal: React.FC<TermProps> = ({
       } else if (char === '\x1b') {
         const nextChar = data[i + 1];
 
+
+        if (nextChar === undefined) {
+          ansiBufferRef.current = data.slice(i);
+          break;
+        }
+
         if (nextChar === '[') {
           let seqEnd = i + 2;
-          while (seqEnd < data.length && !/[a-zA-Z]/.test(data[seqEnd])) {
+
+
+          while (seqEnd < data.length) {
+            const code = data.charCodeAt(seqEnd);
+
+
+            if (code >= 0x40 && code <= 0x7E) {
+              break;
+            }
+
             seqEnd++;
           }
+
+
+          if (seqEnd >= data.length) {
+            ansiBufferRef.current = data.slice(i);
+            break;
+          }
+
           const sequence = data.slice(i + 2, seqEnd);
           const commandLetter = data[seqEnd];
+
           i = seqEnd + 1;
+
+          if (!supportedCommands.has(commandLetter)) {
+            console.warn(
+              '[ANSI] Unsupported CSI:',
+              JSON.stringify(`\x1b[${sequence}${commandLetter}`)
+            );
+          }
 
           if (commandLetter === 'm') {
             const params = sequence.split(';');
@@ -690,16 +762,133 @@ export const Terminal: React.FC<TermProps> = ({
             const targetX = parts[1] ? parseInt(parts[1], 10) - 1 : 0;
             y = Math.min(ROWS - 1, Math.max(0, targetY));
             x = Math.min(COLS - 1, Math.max(0, targetX));
-          } else if (commandLetter === "H") {
-            x = 0;
-            y = 0;
-            i++;
           } else if (commandLetter === 'A') {
             const amount = parseInt(sequence, 10) || 1;
             y = Math.max(0, y - amount);
           } else if (commandLetter === 'B') {
             const amount = parseInt(sequence, 10) || 1;
             y = Math.min(ROWS - 1, y + amount);
+          } else if (commandLetter === 'b') {
+            const amount = Math.max(1, parseInt(sequence, 10) || 1);
+
+            for (let n = 0; n < amount; n++) {
+              if (x >= COLS) {
+                x = 0;
+
+                if (y === scrollBottomRef.current) {
+                  scrollUp(1);
+                } else {
+                  y = Math.min(ROWS - 1, y + 1);
+                }
+              }
+
+              const finalFg = style.inverse ? style.bg : style.fg;
+              const finalBg = style.inverse ? style.fg : style.bg;
+
+              grid[y][x] = {
+                char: lastPrintedChar,
+                fg: finalFg,
+                bg: finalBg
+              };
+
+              x++;
+            }
+          } else if (commandLetter === 'p' && sequence === '!') {
+
+
+            style = {
+              fg: '#ffffff',
+              bg: '#0a0a0a',
+              inverse: false
+            };
+
+            x = 0;
+            y = 0;
+
+            scrollTopRef.current = 0;
+            scrollBottomRef.current = ROWS - 1;
+
+            scrollOffsetRef.current = 0;
+
+
+
+          } else if (commandLetter === 'P') {
+            const amount = Math.max(1, parseInt(sequence, 10) || 1);
+
+            for (let step = 0; step < amount; step++) {
+              for (let col = x; col < COLS - 1; col++) {
+                grid[y][col] = { ...grid[y][col + 1] };
+              }
+
+              grid[y][COLS - 1] = {
+                char: ' ',
+                fg: style.fg,
+                bg: style.bg
+              };
+            }
+          } else if (commandLetter === '@') {
+            const amount = Math.max(1, parseInt(sequence, 10) || 1);
+
+            for (let step = 0; step < amount; step++) {
+              for (let col = COLS - 1; col > x; col--) {
+                grid[y][col] = { ...grid[y][col - 1] };
+              }
+
+              grid[y][x] = {
+                char: ' ',
+                fg: style.fg,
+                bg: style.bg
+              };
+            }
+          } else if (commandLetter === 'X') {
+            const amount = Math.max(1, parseInt(sequence, 10) || 1);
+
+            for (let col = x; col < Math.min(COLS, x + amount); col++) {
+              grid[y][col] = {
+                char: ' ',
+                fg: style.fg,
+                bg: style.bg
+              };
+            }
+          } else if (commandLetter === 'E') {
+            const amount = Math.max(1, parseInt(sequence, 10) || 1);
+            y = Math.min(ROWS - 1, y + amount);
+            x = 0;
+          } else if (commandLetter === 'F') {
+            const amount = Math.max(1, parseInt(sequence, 10) || 1);
+            y = Math.max(0, y - amount);
+            x = 0;
+          } else if (commandLetter === 'a') {
+            const amount = Math.max(1, parseInt(sequence, 10) || 1);
+            x = Math.min(COLS - 1, x + amount);
+          } else if (commandLetter === 'e') {
+            const amount = Math.max(1, parseInt(sequence, 10) || 1);
+            y = Math.min(ROWS - 1, y + amount);
+          } else if (commandLetter === 'I') {
+            const amount = Math.max(1, parseInt(sequence, 10) || 1);
+
+            for (let n = 0; n < amount; n++) {
+              x = Math.min(COLS - 1, x + 8 - x % 8);
+            }
+          } else if (commandLetter === 's') {
+            savedCursorRef.current = { x, y };
+
+          } else if (commandLetter === 'u') {
+            x = savedCursorRef.current.x;
+            y = savedCursorRef.current.y;
+          } else if (commandLetter === 'n') {
+
+
+
+
+
+
+
+
+
+
+
+
           } else if (commandLetter === 'C') {
             const amount = parseInt(sequence, 10) || 1;
             x = Math.min(COLS - 1, x + amount);
@@ -755,6 +944,9 @@ export const Terminal: React.FC<TermProps> = ({
           } else if (commandLetter === 'T') {
             const amount = parseInt(sequence, 10) || 1;
             scrollDown(amount);
+          } else if (commandLetter === 't') {
+
+
           } else if (commandLetter === 'L') {
             const amount = parseInt(sequence, 10) || 1;
             const top = y;
@@ -812,19 +1004,33 @@ export const Terminal: React.FC<TermProps> = ({
           }
         } else if (nextChar === ']') {
           let oscEnd = i + 2;
+          let terminated = false;
 
           while (oscEnd < data.length) {
+
             if (data[oscEnd] === '\x07') {
               oscEnd++;
+              terminated = true;
               break;
             }
 
-            if (data[oscEnd] === '\x1b' && data[oscEnd + 1] === '\\') {
+
+            if (
+            data[oscEnd] === '\x1b' &&
+            data[oscEnd + 1] === '\\')
+            {
               oscEnd += 2;
+              terminated = true;
               break;
             }
 
             oscEnd++;
+          }
+
+
+          if (!terminated) {
+            ansiBufferRef.current = data.slice(i);
+            break;
           }
 
           i = oscEnd;
@@ -868,6 +1074,10 @@ export const Terminal: React.FC<TermProps> = ({
         const finalFg = style.inverse ? style.bg : style.fg;
         const finalBg = style.inverse ? style.fg : style.bg;
         grid[y][x] = { char, fg: finalFg, bg: finalBg };
+
+        lastPrintedChar = char;
+        lastPrintedCharRef.current = char;
+
         x++;
         i++;
       }
@@ -1102,6 +1312,14 @@ export const Terminal: React.FC<TermProps> = ({
               ) :
               [];
 
+              if (usedCredsRef.current.length > 0) {
+                credentialsRef.current = creds;
+                credentialValuesRef.current = usedCredsRef.current.map((cred) => cred.credValue);
+                credentialPromptRef.current = true;
+                submitCredentials();
+                return;
+              }
+
               credentialsRef.current = creds;
               credentialValuesRef.current = creds.map(() => "");
               credentialIndexRef.current = 0;
@@ -1120,6 +1338,14 @@ export const Terminal: React.FC<TermProps> = ({
               credentialIndexRef.current = 0;
               credentialCursorRef.current = 0;
 
+              usedCredsRef.current = credentialsRef.current.map((cred) => (
+              {
+                credName: cred.credName,
+                credTypes: cred.credTypes,
+                credValue: credentialValuesRef.current[credentialsRef.current.indexOf(cred)]
+              })
+              );
+
               writeToTerminal(
                 "\r\n\x1b[32mAuthenticated.\x1b[0m\r\n"
               );
@@ -1129,6 +1355,7 @@ export const Terminal: React.FC<TermProps> = ({
               processed = true;
               return;
             } else if (payload.type === "credFail") {
+              usedCredsRef.current = [];
               credentialPromptRef.current = true;
               credentialAuthenticatedRef.current = false;
 
@@ -1219,7 +1446,6 @@ export const Terminal: React.FC<TermProps> = ({
         if (disposed) return;
 
 
-        if (event.code === 1006 && !credentialAuthenticatedRef.current) {
 
 
 
@@ -1235,12 +1461,13 @@ export const Terminal: React.FC<TermProps> = ({
 
 
 
-          setConnectionState("reconnecting");
+
+        setConnectionState("reconnecting");
 
 
-          reconnectTimer = setTimeout(connect, 5000);
-          return;
-        }
+        reconnectTimer = setTimeout(connect, 5000);
+        return;
+
       };
 
       ws.onerror = () => {

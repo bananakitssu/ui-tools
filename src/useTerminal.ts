@@ -626,7 +626,6 @@ options: UseTerminalOptions | undefined = undefined)
               sessions.set(newSessionId, sessionState);
 
               setTimeout(() => {
-                console.log("INITIAL PTY WRITE", newSessionId, Date.now());
                 if (shell === "bash") {
                   ptyProcess.write(
                     'export PS1="\\[\\e[1;36m\\]\\w\\[\\e[0m\\] \\[\\e[1;32m\\]\\$\\[\\e[0m\\] "; clear\r'

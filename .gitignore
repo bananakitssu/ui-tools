@@ -11,6 +11,7 @@ replit.nix
 attached_assets/
 *.ump
 .upm/
+.swp
 
 # Dev/build deps
 node_modules/
