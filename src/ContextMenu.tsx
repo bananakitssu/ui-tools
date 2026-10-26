@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { useTheme } from './theme';
+import { useTheme } from './theme.js';
 
 export interface ContextMenuItem {
   label: string;

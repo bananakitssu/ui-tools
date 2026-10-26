@@ -21,7 +21,7 @@
   },
   "name": "@bananacool467/ui-tools",
   "version": "0.2.2-beta",
-  "description": "UI Elements + Tools, for frontend and backend",
+  "description": "UI Elements + Tools, for frontend and backend ( backend is optional )",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "repository": "https://github.com/bananakitssu/ui-tools",

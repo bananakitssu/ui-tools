@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useTheme } from './theme';
+import { useTheme } from './theme.js';
 
 export interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
   src?: string;

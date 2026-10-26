@@ -1,6 +1,6 @@
 import React from 'react';
-import { Paper, type PaperElevation } from './Paper';
-import { Typography } from './Typography';
+import { Paper, type PaperElevation } from './Paper.js';
+import { Typography } from './Typography.js';
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 

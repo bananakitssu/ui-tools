@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CircularProgress } from './CircularProgress';
+import { CircularProgress } from './CircularProgress.js';
 
 export interface BackdropProps {
   open: boolean;

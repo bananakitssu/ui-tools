@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { useTheme } from './theme';
+import { useTheme } from './theme.js';
 
 export interface AutocompleteOption {
   label: string;

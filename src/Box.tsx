@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTheme, type Theme } from './theme';
+import { useTheme, type Theme } from './theme.js';
 
 export interface BoxProps extends React.HTMLAttributes<HTMLElement> {
   as?: React.ElementType;

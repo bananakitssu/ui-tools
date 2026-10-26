@@ -1,2 +1,2 @@
-export * from "./useTerminal";
-export type { UseTerminalOptions } from "./useTerminal";
+export * from "./useTerminal.js";
+export type { UseTerminalOptions } from "./useTerminal.js";

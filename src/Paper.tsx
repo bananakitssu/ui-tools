@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTheme } from './theme';
+import { useTheme } from './theme.js';
 
 export type PaperElevation = 0 | 1 | 2 | 3 | 4;
 

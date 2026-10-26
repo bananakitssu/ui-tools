@@ -1,6 +1,6 @@
 import React, { useId } from 'react';
-import { useTheme } from './theme';
-import { useRipple } from './useRipple';
+import { useTheme } from './theme.js';
+import { useRipple } from './useRipple.js';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary';

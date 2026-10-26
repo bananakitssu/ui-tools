@@ -1,5 +1,5 @@
 import React, { useState, useRef, useId } from 'react';
-import { useTheme } from './theme';
+import { useTheme } from './theme.js';
 
 export interface AccordionProps {
   title: React.ReactNode;

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useTheme } from './theme';
+import { useTheme } from './theme.js';
 
 export interface DrawerProps {
   isOpen: boolean;

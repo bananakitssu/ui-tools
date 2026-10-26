@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTheme } from './theme';
+import { useTheme } from './theme.js';
 
 export interface DividerProps extends React.HTMLAttributes<HTMLDivElement> {
   orientation?: 'horizontal' | 'vertical';

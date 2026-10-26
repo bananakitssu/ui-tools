@@ -1,5 +1,5 @@
 import React, { useId, useState } from 'react';
-import { useTheme } from './theme';
+import { useTheme } from './theme.js';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
